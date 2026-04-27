@@ -97,83 +97,30 @@ class Array:
     @staticmethod
     def _calculate_auto_scale(initializer, name: str, length: Optional[int]) -> float:
         # Now need to find the largest power of 2 representable with this format.
-        if Array._largest_values is None:
-            Array._largest_values = {
-                'mxint8': Bits('0b01111111').mxint8,  # 1.0 + 63.0/64.0,
-                'e2m1mxfp4': Bits('0b0111').e2m1mxfp4,  # 6.0
-                'e2m3mxfp6': Bits('0b011111').e2m3mxfp6,  # 7.5
-                'e3m2mxfp6': Bits('0b011111').e3m2mxfp6,  # 28.0
-                'e4m3mxfp8': Bits('0b01111110').e4m3mxfp8,  # 448.0
-                'e5m2mxfp8': Bits('0b01111011').e5m2mxfp8,  # 57344.0
-                'p4binary8': Bits('0b01111110').p4binary8,  # 224.0
-                'p3binary8': Bits('0b01111110').p3binary8,  # 49152.0
-                'float16': Bits('0x7bff').float16,  # 65504.0
-                # The bfloat range is so large the scaling algorithm doesn't work well, so I'm disallowing it.
-                # 'bfloat16': Bits('0x7f7f').bfloat16,  # 3.38953139e38,
-            }
-        if f'{name}{length}' in Array._largest_values.keys():
-            float_values = Array('float64', initializer).tolist()
-            if not float_values:
-                raise ValueError("Can't calculate an 'auto' scale with an empty Array initializer.")
-            max_float_value = max(abs(x) for x in float_values)
-            if max_float_value == 0:
-                # This special case isn't covered in the standard. I'm choosing to return no scale.
-                return 1.0
-            # We need to find the largest power of 2 that is less than the max value
-            log2 = math.floor(math.log2(max_float_value))
-            lp2 = math.floor(math.log2(Array._largest_values[f'{name}{length}']))
-            lg_scale = log2 - lp2
-            # Saturate at values representable in E8M0 format.
-            if lg_scale > 127:
-                lg_scale = 127
-            elif lg_scale < -127:
-                lg_scale = -127
-            return 2 ** lg_scale
-        else:
-            raise ValueError(f"Can't calculate auto scale for format '{name}{length}'. "
-                             f"This feature is only available for these formats: {list(Array._largest_values.keys())}.")
+        pass
 
     @property
     def itemsize(self) -> int:
-        return self._dtype.length
+        pass
 
     @property
     def trailing_bits(self) -> BitArray:
-        trailing_bit_length = len(self.data) % self._dtype.bitlength
-        return BitArray() if trailing_bit_length == 0 else self.data[-trailing_bit_length:]
+        pass
 
     @property
     def dtype(self) -> Dtype:
-        return self._dtype
+        pass
 
     @dtype.setter
     def dtype(self, new_dtype: Union[str, Dtype]) -> None:
-        self._set_dtype(new_dtype)
+        pass
 
     def _set_dtype(self, new_dtype: Union[str, Dtype]) -> None:
-        if isinstance(new_dtype, Dtype):
-            self._dtype = new_dtype
-        else:
-            try:
-                dtype = Dtype(new_dtype)
-            except ValueError:
-                name_length = utils.parse_single_struct_token(new_dtype)
-                if name_length is not None:
-                    dtype = Dtype(name_length[0], name_length[1])
-                else:
-                    raise ValueError(f"Inappropriate Dtype for Array: '{new_dtype}'.")
-            if dtype.length is None:
-                raise ValueError(f"A fixed length format is needed for an Array, received '{new_dtype}'.")
-            self._dtype = dtype
-        if self._dtype.scale == 'auto':
-            raise ValueError("A Dtype with an 'auto' scale factor can only be used when creating a new Array.")
+        pass
 
     def _create_element(self, value: ElementType) -> Bits:
         """Create Bits from value according to the token_name and token_length"""
-        b = self._dtype.build(value)
-        if len(b) != self._dtype.length:
-            raise ValueError(f"The value {value!r} has the wrong length for the format '{self._dtype}'.")
-        return b
+        pass
 
     def __len__(self) -> int:
         return len(self.data) // self._dtype.length
@@ -270,49 +217,22 @@ class Array:
 
     def astype(self, dtype: Union[str, Dtype]) -> Array:
         """Return Array with elements of new dtype, initialised from current Array."""
-        new_array = self.__class__(dtype, self.tolist())
-        return new_array
+        pass
 
     def tolist(self) -> List[ElementType]:
-        return [self._dtype.read_fn(self.data, start=start)
-                for start in range(0, len(self.data) - self._dtype.length + 1, self._dtype.length)]
+        pass
 
     def append(self, x: ElementType) -> None:
-        if len(self.data) % self._dtype.length != 0:
-            raise ValueError("Cannot append to Array as its length is not a multiple of the format length.")
-        self.data += self._create_element(x)
+        pass
 
     def extend(self, iterable: Union[Array, array.array, Iterable[Any]]) -> None:
-        if len(self.data) % self._dtype.length != 0:
-            raise ValueError(f"Cannot extend Array as its data length ({len(self.data)} bits) is not a multiple of the format length ({self._dtype.length} bits).")
-        if isinstance(iterable, Array):
-            if self._dtype.name != iterable._dtype.name or self._dtype.length != iterable._dtype.length:
-                raise TypeError(
-                    f"Cannot extend an Array with format '{self._dtype}' from an Array of format '{iterable._dtype}'.")
-            # No need to iterate over the elements, we can just append the data
-            self.data.append(iterable.data)
-        elif isinstance(iterable, array.array):
-            # array.array types are always native-endian, hence the '='
-            name_value = utils.parse_single_struct_token('=' + iterable.typecode)
-            if name_value is None:
-                raise ValueError(f"Cannot extend from array with typecode {iterable.typecode}.")
-            other_dtype = dtype_register.get_dtype(*name_value, scale=None)
-            if self._dtype.name != other_dtype.name or self._dtype.length != other_dtype.length:
-                raise ValueError(
-                    f"Cannot extend an Array with format '{self._dtype}' from an array with typecode '{iterable.typecode}'.")
-            self.data += iterable.tobytes()
-        else:
-            if isinstance(iterable, str):
-                raise TypeError("Can't extend an Array with a str.")
-            for item in iterable:
-                self.data += self._create_element(item)
+        pass
 
     def insert(self, i: int, x: ElementType) -> None:
         """Insert a new element into the Array at position i.
 
         """
-        i = min(i, len(self))  # Inserting beyond len of array inserts at the end (copying standard behaviour)
-        self.data.insert(self._create_element(x), i * self._dtype.length)
+        pass
 
     def pop(self, i: int = -1) -> ElementType:
         """Return and remove an element of the Array.
@@ -320,11 +240,7 @@ class Array:
         Default is to return and remove the final element.
 
         """
-        if len(self) == 0:
-            raise IndexError("Can't pop from an empty Array.")
-        x = self[i]
-        del self[i]
-        return x
+        pass
 
     def byteswap(self) -> None:
         """Change the endianness in-place of all items in the Array.
@@ -332,10 +248,7 @@ class Array:
         If the Array format is not a whole number of bytes a ValueError will be raised.
 
         """
-        if self._dtype.length % 8 != 0:
-            raise ValueError(
-                f"byteswap can only be used for whole-byte elements. The '{self._dtype}' format is {self._dtype.length} bits long.")
-        self.data.byteswap(self.itemsize // 8)
+        pass
 
     def count(self, value: ElementType) -> int:
         """Return count of Array items that equal value.
@@ -345,10 +258,7 @@ class Array:
         For floating point types using a value of float('nan') will count the number of elements that are NaN.
 
         """
-        if math.isnan(value):
-            return sum(math.isnan(i) for i in self)
-        else:
-            return sum(i == value for i in self)
+        pass
 
     def tobytes(self) -> bytes:
         """Return the Array data as a bytes object, padding with zero bits if needed.
@@ -356,7 +266,7 @@ class Array:
         Up to seven zero bits will be added at the end to byte align.
 
         """
-        return self.data.tobytes()
+        pass
 
     def tofile(self, f: BinaryIO) -> None:
         """Write the Array data to a file object, padding with zero bits if needed.
@@ -364,30 +274,13 @@ class Array:
         Up to seven zero bits will be added at the end to byte align.
 
         """
-        self.data.tofile(f)
+        pass
 
     def fromfile(self, f: BinaryIO, n: Optional[int] = None) -> None:
-        trailing_bit_length = len(self.data) % self._dtype.bitlength
-        if trailing_bit_length != 0:
-            raise ValueError(f"Cannot extend Array as its data length ({len(self.data)} bits) is not a multiple of the format length ({self._dtype.bitlength} bits).")
-
-        new_data = Bits(f)
-        max_items = len(new_data) // self._dtype.length
-        items_to_append = max_items if n is None else min(n, max_items)
-        self.data += new_data[0: items_to_append * self._dtype.bitlength]
-        if n is not None and items_to_append < n:
-            raise EOFError(f"Only {items_to_append} were appended, not the {n} items requested.")
+        pass
 
     def reverse(self) -> None:
-        trailing_bit_length = len(self.data) % self._dtype.length
-        if trailing_bit_length != 0:
-            raise ValueError(f"Cannot reverse the items in the Array as its data length ({len(self.data)} bits) is not a multiple of the format length ({self._dtype.length} bits).")
-        for start_bit in range(0, len(self.data) // 2, self._dtype.length):
-            start_swap_bit = len(self.data) - start_bit - self._dtype.length
-            temp = self.data[start_bit: start_bit + self._dtype.length]
-            self.data[start_bit: start_bit + self._dtype.length] = self.data[
-                                                               start_swap_bit: start_swap_bit + self._dtype.length]
-            self.data[start_swap_bit: start_swap_bit + self._dtype.length] = temp
+        pass
 
     def pp(self, fmt: Optional[str] = None, width: int = 120,
            show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
@@ -400,74 +293,11 @@ class Array:
         stream -- A TextIO object with a write() method. Defaults to sys.stdout.
 
         """
-        colour = Colour(not options.no_color)
-        sep = ' '
-        dtype2 = None
-        tidy_fmt = None
-        if fmt is None:
-            fmt = self.dtype
-            dtype1 = self.dtype
-            tidy_fmt = "dtype='" + colour.purple + str(self.dtype) + "'" + colour.off
-        else:
-            token_list = utils.preprocess_tokens(fmt)
-            if len(token_list) not in [1, 2]:
-                raise ValueError(f"Only one or two tokens can be used in an Array.pp() format - '{fmt}' has {len(token_list)} tokens.")
-            name1, length1 = utils.parse_name_length_token(token_list[0])
-            dtype1 = Dtype(name1, length1)
-            if len(token_list) == 2:
-                name2, length2 = utils.parse_name_length_token(token_list[1])
-                dtype2 = Dtype(name2, length2)
-
-        token_length = dtype1.bitlength
-        if dtype2 is not None:
-            # For two types we're OK as long as they don't have different lengths given.
-            if dtype1.bitlength is not None and dtype2.bitlength is not None and dtype1.bitlength != dtype2.bitlength:
-                raise ValueError(f"Two different format lengths specified ('{fmt}'). Either specify just one, or two the same length.")
-            if token_length is None:
-                token_length = dtype2.bitlength
-        if token_length is None:
-            token_length = self.itemsize
-
-        trailing_bit_length = len(self.data) % token_length
-        format_sep = " : "  # String to insert on each line between multiple formats
-        if tidy_fmt is None:
-            tidy_fmt = colour.purple + str(dtype1) + colour.off
-            if dtype2 is not None:
-                tidy_fmt += ', ' + colour.blue + str(dtype2) + colour.off
-            tidy_fmt = "fmt='" + tidy_fmt + "'"
-        data = self.data if trailing_bit_length == 0 else self.data[0: -trailing_bit_length]
-        length = len(self.data) // token_length
-        len_str = colour.green + str(length) + colour.off
-        stream.write(f"<{self.__class__.__name__} {tidy_fmt}, length={len_str}, itemsize={token_length} bits, total data size={(len(self.data) + 7) // 8} bytes> [\n")
-        data._pp(dtype1, dtype2, token_length, width, sep, format_sep, show_offset, stream, False, token_length)
-        stream.write("]")
-        if trailing_bit_length != 0:
-            stream.write(" + trailing_bits = " + str(self.data[-trailing_bit_length:]))
-        stream.write("\n")
+        pass
 
     def equals(self, other: Any) -> bool:
         """Return True if format and all Array items are equal."""
-        if isinstance(other, Array):
-            if self._dtype.length != other._dtype.length:
-                return False
-            if self._dtype.name != other._dtype.name:
-                return False
-            if self.data != other.data:
-                return False
-            return True
-        elif isinstance(other, array.array):
-            # Assume we are comparing with an array type
-            if self.trailing_bits:
-                return False
-            # array's itemsize is in bytes, not bits.
-            if self.itemsize != other.itemsize * 8:
-                return False
-            if len(self) != len(other):
-                return False
-            if self.tolist() != other.tolist():
-                return False
-            return True
-        return False
+        pass
 
     def __iter__(self) -> Iterable[ElementType]:
         start = 0
@@ -482,98 +312,22 @@ class Array:
 
     def _apply_op_to_all_elements(self, op, value: Union[int, float, None], is_comparison: bool = False) -> Array:
         """Apply op with value to each element of the Array and return a new Array"""
-        new_array = self.__class__('bool' if is_comparison else self._dtype)
-        new_data = BitArray()
-        failures = index = 0
-        msg = ''
-        if value is not None:
-            def partial_op(a):
-                return op(a, value)
-        else:
-            def partial_op(a):
-                return op(a)
-        for i in range(len(self)):
-            v = self._dtype.read_fn(self.data, start=self._dtype.length * i)
-            try:
-                new_data.append(new_array._create_element(partial_op(v)))
-            except (CreationError, ZeroDivisionError, ValueError) as e:
-                if failures == 0:
-                    msg = str(e)
-                    index = i
-                failures += 1
-        if failures != 0:
-            raise ValueError(f"Applying operator '{op.__name__}' to Array caused {failures} errors. "
-                             f'First error at index {index} was: "{msg}"')
-        new_array.data = new_data
-        return new_array
+        pass
 
     def _apply_op_to_all_elements_inplace(self, op, value: Union[int, float]) -> Array:
         """Apply op with value to each element of the Array in place."""
-        # This isn't really being done in-place, but it's simpler and faster for now?
-        new_data = BitArray()
-        failures = index = 0
-        msg = ''
-        for i in range(len(self)):
-            v = self._dtype.read_fn(self.data, start=self._dtype.length * i)
-            try:
-                new_data.append(self._create_element(op(v, value)))
-            except (CreationError, ZeroDivisionError, ValueError) as e:
-                if failures == 0:
-                    msg = str(e)
-                    index = i
-                failures += 1
-        if failures != 0:
-            raise ValueError(f"Applying operator '{op.__name__}' to Array caused {failures} errors. "
-                             f'First error at index {index} was: "{msg}"')
-        self.data = new_data
-        return self
+        pass
 
     def _apply_bitwise_op_to_all_elements(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer and return a new Array"""
-        a_copy = self[:]
-        a_copy._apply_bitwise_op_to_all_elements_inplace(op, value)
-        return a_copy
+        pass
 
     def _apply_bitwise_op_to_all_elements_inplace(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer in place."""
-        value = BitArray._create_from_bitstype(value)
-        if len(value) != self._dtype.length:
-            raise ValueError(f"Bitwise op needs a bitstring of length {self._dtype.length} to match format {self._dtype}.")
-        for start in range(0, len(self) * self._dtype.length, self._dtype.length):
-            self.data[start: start + self._dtype.length] = op(self.data[start: start + self._dtype.length], value)
-        return self
+        pass
 
     def _apply_op_between_arrays(self, op, other: Array, is_comparison: bool = False) -> Array:
-        if len(self) != len(other):
-            msg = f"Cannot operate element-wise on Arrays with different lengths ({len(self)} and {len(other)})."
-            if op in [operator.add, operator.iadd]:
-                msg += " Use extend() method to concatenate Arrays."
-            if op in [operator.eq, operator.ne]:
-                msg += " Use equals() method to compare Arrays for a single boolean result."
-            raise ValueError(msg)
-        if is_comparison:
-            new_type = dtype_register.get_dtype('bool', 1)
-        else:
-            new_type = self._promotetype(self._dtype, other._dtype)
-        new_array = self.__class__(new_type)
-        new_data = BitArray()
-        failures = index = 0
-        msg = ''
-        for i in range(len(self)):
-            a = self._dtype.read_fn(self.data, start=self._dtype.length * i)
-            b = other._dtype.read_fn(other.data, start=other._dtype.length * i)
-            try:
-                new_data.append(new_array._create_element(op(a, b)))
-            except (CreationError, ValueError, ZeroDivisionError) as e:
-                if failures == 0:
-                    msg = str(e)
-                    index = i
-                failures += 1
-        if failures != 0:
-            raise ValueError(f"Applying operator '{op.__name__}' between Arrays caused {failures} errors. "
-                             f'First error at index {index} was: "{msg}"')
-        new_array.data = new_data
-        return new_array
+        pass
 
     @classmethod
     def _promotetype(cls, type1: Dtype, type2: Dtype) -> Dtype:
@@ -587,26 +341,7 @@ class Array:
         6. In a tie the first type wins against the second type.
 
         """
-        def is_float(x): return x.return_type is float
-        def is_int(x): return x.return_type is int or x.return_type is bool
-        if is_float(type1) + is_int(type1) + is_float(type2) + is_int(type2) != 2:
-            raise ValueError(f"Only integer and floating point types can be combined - not '{type1}' and '{type2}'.")
-        # If same type choose the widest
-        if type1.name == type2.name:
-            return type1 if type1.length > type2.length else type2
-        # We choose floats above integers, irrespective of the widths
-        if is_float(type1) and is_int(type2):
-            return type1
-        if is_int(type1) and is_float(type2):
-            return type2
-        if is_float(type1) and is_float(type2):
-            return type2 if type2.length > type1.length else type1
-        assert is_int(type1) and is_int(type2)
-        if type1.is_signed and not type2.is_signed:
-            return type1
-        if type2.is_signed and not type1.is_signed:
-            return type2
-        return type2 if type2.length > type1.length else type1
+        pass
 
     # Operators between Arrays or an Array and scalar value
 
@@ -758,10 +493,7 @@ class Array:
         return self._apply_op_to_all_elements(operator.le, other, is_comparison=True)
 
     def _eq_ne(self, op, other: Any) -> Array:
-        if isinstance(other, (int, float, str, Bits)):
-            return self._apply_op_to_all_elements(op, other, is_comparison=True)
-        other = self.__class__(self.dtype, other)
-        return self._apply_op_between_arrays(op, other, is_comparison=True)
+        pass
 
     def __eq__(self, other: Any) -> Array:
         return self._eq_ne(operator.eq, other)

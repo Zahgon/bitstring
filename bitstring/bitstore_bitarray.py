@@ -25,93 +25,49 @@ class _BitStore:
 
     @classmethod
     def from_zeros(cls, i: int) -> _BitStore:
-        x = super().__new__(cls)
-        x._bitarray = bitarray.bitarray(i)
-        x.immutable = False
-        x.modified_length = None
-        return x
+        pass
 
 
     @classmethod
     def from_bin(cls, s: str) -> _BitStore:
-        x = super().__new__(cls)
-        x._bitarray = bitarray.bitarray(s)
-        x.immutable = False
-        x.modified_length = None
-        return x
+        pass
 
     @classmethod
     def from_bytes(cls, b: Union[bytes, bytearray, memoryview], /) -> _BitStore:
-        x = super().__new__(cls)
-        x._bitarray = bitarray.bitarray()
-        x._bitarray.frombytes(b)
-        x.immutable = False
-        x.modified_length = None
-        return x
+        pass
 
     @classmethod
     def frombuffer(cls, buffer, /, length: Optional[int] = None) -> _BitStore:
-        x = super().__new__(cls)
-        x._bitarray = bitarray.bitarray(buffer=buffer)
-        x.immutable = True
-        x.modified_length = length
-        # Here 'modified' means it shouldn't be changed further, so setting, deleting etc. are disallowed.
-        if x.modified_length is not None:
-            if x.modified_length < 0:
-                raise CreationError("Can't create bitstring with a negative length.")
-            if x.modified_length > len(x._bitarray):
-                raise CreationError(
-                    f"Can't create bitstring with a length of {x.modified_length} from {len(x._bitarray)} bits of data.")
-        return x
+        pass
 
     @classmethod
     def join(cls, bitstores: Iterable[_BitStore], /) -> _BitStore:
-        x = super().__new__(cls)
-        x._bitarray = bitarray.bitarray()
-        for b in bitstores:
-            x._bitarray += b._bitarray
-        x.immutable = False
-        x.modified_length = None
-        return x
+        pass
 
     @staticmethod
     def using_rust_core() -> bool:
-        return False
+        pass
 
     def tobitarray(self) -> bitarray.bitarray:
-        if self.modified_length is not None:
-            return self.getslice(0, len(self))._bitarray
-        return self._bitarray
+        pass
 
     def to_bytes(self) -> bytes:
-        if self.modified_length is not None:
-            return self._bitarray[:self.modified_length].tobytes()
-        return self._bitarray.tobytes()
+        pass
 
     def to_u(self) -> int:
-        if self.modified_length is not None:
-            return bitarray.util.ba2int(self._bitarray[:self.modified_length], signed=False)
-        return bitarray.util.ba2int(self._bitarray, signed=False)
+        pass
 
     def to_i(self) -> int:
-        if self.modified_length is not None:
-            return bitarray.util.ba2int(self._bitarray[:self.modified_length], signed=True)
-        return bitarray.util.ba2int(self._bitarray, signed=True)
+        pass
 
     def to_hex(self) -> str:
-        if self.modified_length is not None:
-            return bitarray.util.ba2hex(self._bitarray[:self.modified_length])
-        return bitarray.util.ba2hex(self._bitarray)
+        pass
 
     def to_bin(self) -> str:
-        if self.modified_length is not None:
-            return self._bitarray[:self.modified_length].to01()
-        return self._bitarray.to01()
+        pass
 
     def to_oct(self) -> str:
-        if self.modified_length is not None:
-            return bitarray.util.ba2base(8, self._bitarray[:self.modified_length])
-        return bitarray.util.ba2base(8, self._bitarray)
+        pass
 
     def __imul__(self, n: int, /) -> _BitStore:
         self._bitarray *= n
@@ -160,69 +116,25 @@ class _BitStore:
         return _BitStore(~self._bitarray)
 
     def find(self, bs: _BitStore, start: int, end: int, bytealigned: bool = False) -> int | None:
-        if not bytealigned:
-            x = self._bitarray.find(bs._bitarray, start, end)
-            return None if x == -1 else x
-        try:
-            return next(self.findall_msb0(bs, start, end, bytealigned))
-        except StopIteration:
-            return None
+        pass
 
     def rfind(self, bs: _BitStore, start: int, end: int, bytealigned: bool = False) -> int | None:
-        if not bytealigned:
-            x = self._bitarray.find(bs._bitarray, start, end, right=True)
-            return None if x == -1 else x
-        try:
-            return next(self.rfindall_msb0(bs, start, end, bytealigned))
-        except StopIteration:
-            return None
+        pass
 
     def findall_msb0(self, bs: _BitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
-        if bytealigned is True and len(bs) % 8 == 0:
-            # Special case, looking for whole bytes on whole byte boundaries
-            bytes_ = bs.to_bytes()
-            # Round up start byte to next byte, and round end byte down.
-            # We're only looking for whole bytes, so can ignore bits at either end.
-            start_byte = (start + 7) // 8
-            end_byte = end // 8
-            b = self._bitarray[start_byte * 8: end_byte * 8].tobytes()
-            byte_pos = 0
-            bytes_to_search = end_byte - start_byte
-            while byte_pos < bytes_to_search:
-                byte_pos = b.find(bytes_, byte_pos)
-                if byte_pos == -1:
-                    break
-                yield (byte_pos + start_byte) * 8
-                byte_pos = byte_pos + 1
-            return
-        # General case
-        i = self._bitarray.search(bs._bitarray, start, end)
-        if not bytealigned:
-            for p in i:
-                yield p
-        else:
-            for p in i:
-                if (p % 8) == 0:
-                    yield p
+        pass
 
     def rfindall_msb0(self, bs: _BitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
-        i = self._bitarray.search(bs._bitarray, start, end, right=True)
-        if not bytealigned:
-            for p in i:
-                yield p
-        else:
-            for p in i:
-                if (p % 8) == 0:
-                    yield p
+        pass
 
     def count(self, value, /) -> int:
-        return self._bitarray.count(value)
+        pass
 
     def clear(self) -> None:
-        self._bitarray.clear()
+        pass
 
     def reverse(self) -> None:
-        self._bitarray.reverse()
+        pass
 
     def __iter__(self) -> Iterable[bool]:
         for i in range(len(self)):
@@ -230,43 +142,35 @@ class _BitStore:
 
     def _mutable_copy(self) -> _BitStore:
         """Always creates a copy, even if instance is immutable."""
-        return _BitStore(self._bitarray, immutable=False)
+        pass
 
     def as_immutable(self) -> _BitStore:
-        return _BitStore(self._bitarray, immutable=True)
+        pass
 
     def copy(self) -> _BitStore:
-        return self if self.immutable else self._mutable_copy()
+        pass
 
     def __getitem__(self, item: Union[int, slice], /) -> Union[int, _BitStore]:
         # Use getindex or getslice instead
         raise NotImplementedError
 
     def getindex_msb0(self, index: int, /) -> bool:
-        return bool(self._bitarray.__getitem__(index))
+        pass
 
     def getslice_withstep_msb0(self, key: slice, /) -> _BitStore:
-        if self.modified_length is not None:
-            key = slice(*key.indices(self.modified_length))
-        return _BitStore(self._bitarray.__getitem__(key))
+        pass
 
     def getslice_withstep_lsb0(self, key: slice, /) -> _BitStore:
-        key = offset_slice_indices_lsb0(key, len(self))
-        return _BitStore(self._bitarray.__getitem__(key))
+        pass
 
     def getslice_msb0(self, start: Optional[int], stop: Optional[int], /) -> _BitStore:
-        if self.modified_length is not None:
-            key = slice(*slice(start, stop, None).indices(self.modified_length))
-            start = key.start
-            stop = key.stop
-        return _BitStore(self._bitarray[start:stop])
+        pass
 
     def getslice_lsb0(self, start: Optional[int], stop: Optional[int], /) -> _BitStore:
-        s = offset_slice_indices_lsb0(slice(start, stop, None), len(self))
-        return _BitStore(self._bitarray[s.start:s.stop])
+        pass
 
     def getindex_lsb0(self, index: int, /) -> bool:
-        return bool(self._bitarray.__getitem__(-index - 1))
+        pass
 
     @overload
     def setitem_lsb0(self, key: int, value: int, /) -> None:
@@ -277,51 +181,34 @@ class _BitStore:
         ...
 
     def setitem_lsb0(self, key: Union[int, slice], value: Union[int, _BitStore], /) -> None:
-        if isinstance(key, slice):
-            new_slice = offset_slice_indices_lsb0(key, len(self))
-            self._bitarray.__setitem__(new_slice, value._bitarray)
-        else:
-            self._bitarray.__setitem__(-key - 1, value)
+        pass
 
     def delitem_lsb0(self, key: Union[int, slice], /) -> None:
-        if isinstance(key, slice):
-            new_slice = offset_slice_indices_lsb0(key, len(self))
-            self._bitarray.__delitem__(new_slice)
-        else:
-            self._bitarray.__delitem__(-key - 1)
+        pass
 
     def invert_msb0(self, index: Optional[int] = None, /) -> None:
-        if index is not None:
-            self._bitarray.invert(index)
-        else:
-            self._bitarray.invert()
+        pass
 
     def invert_lsb0(self, index: Optional[int] = None, /) -> None:
-        if index is not None:
-            self._bitarray.invert(-index - 1)
-        else:
-            self._bitarray.invert()
+        pass
 
     def extend_left(self, other: _BitStore, /) -> None:
-        self._bitarray = other._bitarray + self._bitarray
+        pass
 
     def any(self) -> bool:
-        return self._bitarray.any()
+        pass
 
     def all(self) -> bool:
-        return self._bitarray.all()
+        pass
 
     def __len__(self) -> int:
         return self.modified_length if self.modified_length is not None else len(self._bitarray)
 
     def setitem_msb0(self, key, value, /):
-        if isinstance(value, _BitStore):
-            self._bitarray.__setitem__(key, value._bitarray)
-        else:
-            self._bitarray.__setitem__(key, value)
+        pass
 
     def delitem_msb0(self, key, /):
-        self._bitarray.__delitem__(key)
+        pass
 
 
 ConstBitStore = _BitStore

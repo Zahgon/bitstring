@@ -106,22 +106,22 @@ class _MyModuleType(types.ModuleType):
     @property
     def bytealigned(self) -> bool:
         """Determines whether a number of methods default to working only on byte boundaries."""
-        return options.bytealigned
+        pass
 
     @bytealigned.setter
     def bytealigned(self, value: bool) -> None:
         """Determines whether a number of methods default to working only on byte boundaries."""
-        options.bytealigned = value
+        pass
 
     @property
     def lsb0(self) -> bool:
         """If True, the least significant bit (the final bit) is indexed as bit zero."""
-        return options.lsb0
+        pass
 
     @lsb0.setter
     def lsb0(self, value: bool) -> None:
         """If True, the least significant bit (the final bit) is indexed as bit zero."""
-        options.lsb0 = value
+        pass
 
 
 sys.modules[__name__].__class__ = _MyModuleType
@@ -130,98 +130,94 @@ sys.modules[__name__].__class__ = _MyModuleType
 # These methods convert a bit length to the number of characters needed to print it for different interpretations.
 def hex_bits2chars(bitlength: int):
     # One character for every 4 bits
-    return bitlength // 4
+    pass
 
 
 def oct_bits2chars(bitlength: int):
     # One character for every 3 bits
-    return bitlength // 3
+    pass
 
 
 def bin_bits2chars(bitlength: int):
     # One character for each bit
-    return bitlength
+    pass
 
 
 def bytes_bits2chars(bitlength: int):
     # One character for every 8 bits
-    return bitlength // 8
+    pass
 
 
 def uint_bits2chars(bitlength: int):
     # How many characters is largest possible int of this length?
-    return len(str((1 << bitlength) - 1))
+    pass
 
 
 def int_bits2chars(bitlength: int):
     # How many characters is largest negative int of this length? (To include minus sign).
-    return len(str((-1 << (bitlength - 1))))
+    pass
 
 
 def float_bits2chars(bitlength: Literal[16, 32, 64]):
     # These bit lengths were found by looking at lots of possible values
-    if bitlength in [16, 32]:
-        return 23  # Empirical value
-    else:
-        return 24  # Empirical value
+    pass
 
 
 def p3binary_bits2chars(_: Literal[8]):
-    return 19  # Empirical value
+    pass
 
 
 def p4binary_bits2chars(_: Literal[8]):
     # Found by looking at all the possible values
-    return 13  # Empirical value
+    pass
 
 
 def e4m3mxfp_bits2chars(_: Literal[8]):
-    return 13
+    pass
 
 
 def e5m2mxfp_bits2chars(_: Literal[8]):
-    return 19
+    pass
 
 
 def e3m2mxfp_bits2chars(_: Literal[6]):
     # Not sure what the best value is here. It's 7 without considering the scale that could be applied.
-    return 7
+    pass
 
 
 def e2m3mxfp_bits2chars(_: Literal[6]):
     # Not sure what the best value is here.
-    return 7
+    pass
 
 
 def e2m1mxfp_bits2chars(_: Literal[4]):
     # Not sure what the best value is here.
-    return 7
+    pass
 
 
 def e8m0mxfp_bits2chars(_: Literal[8]):
     # Has same range as float32
-    return 23
+    pass
 
 
 def mxint_bits2chars(_: Literal[8]):
     # Not sure what the best value is here.
-    return 10
+    pass
 
 
 def bfloat_bits2chars(_: Literal[16]):
     # Found by looking at all the possible values
-    return 23  # Empirical value
+    pass
 
 
 def bits_bits2chars(bitlength: int):
     # For bits type we can see how long it needs to be printed by trying any value
-    temp = Bits(bitlength)
-    return len(str(temp))
+    pass
 
 
 def bool_bits2chars(_: Literal[1]):
     # Bools are printed as 1 or 0, not True or False, so are one character each
-    return 1
+    pass
 
 
 dtype_definitions = [

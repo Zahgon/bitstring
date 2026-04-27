@@ -21,92 +21,55 @@ class ConstBitStore:
 
     @classmethod
     def join(cls, bitstores: Iterable[ConstBitStore], /) -> ConstBitStore:
-        x = super().__new__(cls)
-        x._bits = Tibs.from_joined(b._bits for b in bitstores)
-        return x
+        pass
 
     @classmethod
     def from_zeros(cls, i: int):
-        x = super().__new__(cls)
-        x._bits = Tibs.from_zeros(i)
-        return x
+        pass
 
     @classmethod
     def from_tibs(cls, tb: Tibs):
-        x = super().__new__(cls)
-        x._bits = tb
-        return x
+        pass
 
     @classmethod
     def from_bytes(cls, b: Union[bytes, bytearray, memoryview], /) -> ConstBitStore:
-        x = super().__new__(cls)
-        x._bits = Tibs.from_bytes(b)
-        return x
+        pass
 
     @classmethod
     def frombuffer(cls, buffer, /, length: Optional[int] = None) -> ConstBitStore:
-        x = super().__new__(cls)
-        # TODO: tibs needs a Tibs.from_buffer method.
-        x._bits = Tibs.from_bytes(bytes(buffer))
-        if length is not None:
-            if length < 0:
-                raise CreationError("Can't create bitstring with a negative length.")
-            if length > len(x._bits):
-                raise CreationError(
-                    f"Can't create bitstring with a length of {length} from {len(x._bits)} bits of data.")
-        return x.getslice(0, length) if length is not None else x
+        pass
 
     @classmethod
     def from_bin(cls, s: str) -> ConstBitStore:
-        x = super().__new__(cls)
-        x._bits = Tibs.from_bin(s)
-        return x
+        pass
 
     def set(self, value, pos) -> None:
-        self._bits.set(value, pos)
+        pass
 
     @staticmethod
     def using_rust_core() -> bool:
-        return True
+        pass
 
     def tobitarray(self):
         raise TypeError("tobitarray() is not available when using the Rust core option.")
 
     def to_bytes(self, pad_at_end: bool = True) -> bytes:
-        excess_bits = len(self._bits) % 8
-        if excess_bits != 0:
-            # Pad with zeros to make full bytes
-            if pad_at_end:
-                padded_bits = self._bits.to_mutibs().extend(Mutibs.from_zeros(8 - excess_bits))
-            else:
-                padded_bits = self._bits.to_mutibs().extend_left(Mutibs.from_zeros(8 - excess_bits))
-            return padded_bits.to_bytes()
-        return self._bits.to_bytes()
+        pass
 
     def to_u(self) -> int:
-        if len(self) > 128:
-            return int.from_bytes(self.to_bytes(pad_at_end=False), byteorder="big", signed=False)
-        try:
-            return self._bits.to_u()
-        except OverflowError as e:
-            raise ValueError(e)
+        pass
 
     def to_i(self) -> int:
-        if len(self) > 128:
-            return int.from_bytes(self.to_bytes(pad_at_end=False), byteorder="big", signed=True)
-        try:
-            return self._bits.to_i()
-        except OverflowError as e:
-            raise ValueError(e)
+        pass
 
     def to_hex(self) -> str:
-        return self._bits.to_hex()
+        pass
 
     def to_bin(self) -> str:
-        return self._bits.to_bin()
+        pass
 
     def to_oct(self) -> str:
-        return self._bits.to_oct()
+        pass
 
     def __add__(self, other: ConstBitStore, /) -> ConstBitStore:
         newbits = self._bits + other._bits
@@ -128,25 +91,19 @@ class ConstBitStore:
         return ConstBitStore.from_tibs(~self._bits)
 
     def find(self, bs: ConstBitStore, start: int, end: int, bytealigned: bool = False) -> int | None:
-        assert start >= 0
-        return self._bits.find(bs._bits, start, end, byte_aligned=bytealigned)
+        pass
 
     def rfind(self, bs: ConstBitStore, start: int, end: int, bytealigned: bool = False) -> int | None:
-        assert start >= 0
-        return self._bits.rfind(bs._bits, start, end, byte_aligned=bytealigned)
+        pass
 
     def findall_msb0(self, bs: ConstBitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
-        x = self._bits
-        for p in x.find_all(bs._bits, start=start, end=end, byte_aligned=bytealigned):
-            yield p
+        pass
 
     def rfindall_msb0(self, bs: ConstBitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
-        x = self._bits
-        for p in x.rfind_all(bs._bits, start=start, end=end, byte_aligned=bytealigned):
-            yield p
+        pass
 
     def count(self, value, /) -> int:
-        return self._bits.count(value)
+        pass
 
     def __iter__(self) -> Iterable[bool]:
         length = len(self)
@@ -155,40 +112,38 @@ class ConstBitStore:
 
     def _mutable_copy(self) -> MutableBitStore:
         """Always creates a copy, even if instance is immutable."""
-        return MutableBitStore.from_mutibs(self._bits.to_mutibs())
+        pass
 
     def copy(self) -> ConstBitStore:
-        return self if isinstance(self._bits, Tibs) else self._mutable_copy()
+        pass
 
     def __getitem__(self, item: Union[int, slice], /) -> Union[int, ConstBitStore]:
         # Use getindex or getslice instead
         raise NotImplementedError
 
     def getindex_msb0(self, index: int, /) -> bool:
-        return self._bits.__getitem__(index)
+        pass
 
     def getslice_withstep_msb0(self, key: slice, /) -> ConstBitStore:
-        return ConstBitStore(self._bits.__getitem__(key))
+        pass
 
     def getslice_withstep_lsb0(self, key: slice, /) -> ConstBitStore:
-        key = offset_slice_indices_lsb0(key, len(self))
-        return ConstBitStore(self._bits.__getitem__(key))
+        pass
 
     def getslice_msb0(self, start: Optional[int], stop: Optional[int], /) -> ConstBitStore:
-        return ConstBitStore(self._bits[start:stop])
+        pass
 
     def getslice_lsb0(self, start: Optional[int], stop: Optional[int], /) -> ConstBitStore:
-        s = offset_slice_indices_lsb0(slice(start, stop, None), len(self))
-        return ConstBitStore(self._bits[s.start:s.stop])
+        pass
 
     def getindex_lsb0(self, index: int, /) -> bool:
-        return self._bits.__getitem__(-index - 1)
+        pass
 
     def any(self) -> bool:
-        return self._bits.any()
+        pass
 
     def all(self) -> bool:
-        return self._bits.all()
+        pass
 
     def __len__(self) -> int:
         return len(self._bits)
@@ -207,87 +162,51 @@ class MutableBitStore:
 
     @classmethod
     def from_zeros(cls, i: int):
-        x = super().__new__(cls)
-        x._bits = Mutibs.from_zeros(i)
-        return x
+        pass
 
     @classmethod
     def from_mutibs(cls, mb: Mutibs):
-        assert isinstance(mb, Mutibs)
-        x = super().__new__(cls)
-        x._bits = mb
-        return x
+        pass
 
     @classmethod
     def from_bytes(cls, b: Union[bytes, bytearray, memoryview], /) -> MutableBitStore:
-        x = super().__new__(cls)
-        x._bits = Mutibs.from_bytes(b)
-        return x
+        pass
 
     @classmethod
     def frombuffer(cls, buffer, /, length: Optional[int] = None) -> MutableBitStore:
-        x = super().__new__(cls)
-        # TODO: tibs needs a Bits.from_buffer method.
-        x._bits = Mutibs.from_bytes(bytes(buffer))
-        if length is not None:
-            if length < 0:
-                raise CreationError("Can't create bitstring with a negative length.")
-            if length > len(x._bits):
-                raise CreationError(
-                    f"Can't create bitstring with a length of {length} from {len(x._bits)} bits of data.")
-        return x.getslice(0, length) if length is not None else x
+        pass
 
     @classmethod
     def from_bin(cls, s: str) -> MutableBitStore:
-        x = super().__new__(cls)
-        x._bits = Mutibs.from_bin(s)
-        return x
+        pass
 
     def set(self, value, pos) -> None:
-        self._bits.set(value, pos)
+        pass
 
     @staticmethod
     def using_rust_core() -> bool:
-        return True
+        pass
 
     def tobitarray(self):
         raise TypeError("tobitarray() is not available when using the Rust core option.")
 
     def to_bytes(self, pad_at_end: bool = True) -> bytes:
-        excess_bits = len(self._bits) % 8
-        if excess_bits != 0:
-            # Pad with zeros to make full bytes
-            if pad_at_end:
-                padded_bits = self._bits + Mutibs.from_zeros(8 - excess_bits)
-            else:
-                padded_bits = Mutibs.from_zeros(8 - excess_bits) + self._bits
-            return padded_bits.to_bytes()
-        return self._bits.to_bytes()
+        pass
 
     def to_u(self) -> int:
-        if len(self) > 128:
-            return int.from_bytes(self.to_bytes(pad_at_end=False), byteorder="big", signed=False)
-        try:
-            return self._bits.to_u()
-        except OverflowError as e:
-            raise ValueError(e)
+        pass
 
     def to_i(self) -> int:
-        if len(self) > 128:
-            return int.from_bytes(self.to_bytes(pad_at_end=False), byteorder="big", signed=True)
-        try:
-            return self._bits.to_i()
-        except OverflowError as e:
-            raise ValueError(e)
+        pass
 
     def to_hex(self) -> str:
-        return self._bits.to_hex()
+        pass
 
     def to_bin(self) -> str:
-        return self._bits.to_bin()
+        pass
 
     def to_oct(self) -> str:
-        return self._bits.to_oct()
+        pass
 
     def __imul__(self, n: int, /) -> None:
         self._bits *= n
@@ -335,69 +254,61 @@ class MutableBitStore:
         return MutableBitStore.from_mutibs(~self._bits)
 
     def find(self, bs: MutableBitStore, start: int, end: int, bytealigned: bool = False) -> int:
-        assert start >= 0
-        return self._bits.find(bs._bits, start, end, byte_aligned=bytealigned)
+        pass
 
     def rfind(self, bs: MutableBitStore, start: int, end: int, bytealigned: bool = False):
-        assert start >= 0
-        return self._bits.rfind(bs._bits, start, end, byte_aligned=bytealigned)
+        pass
 
     def findall_msb0(self, bs: MutableBitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
-        x = self._bits.to_tibs()
-        for p in x.find_all(bs._bits, start=start, end=end, byte_aligned=bytealigned):
-            yield p
+        pass
 
     def rfindall_msb0(self, bs: MutableBitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
-        x = self._bits.to_tibs()
-        for p in x.rfind_all(bs._bits, start=start, end=end, byte_aligned=bytealigned):
-            yield p
+        pass
 
     def count(self, value, /) -> int:
-        return self._bits.count(value)
+        pass
 
     def clear(self) -> None:
-        self._bits.clear()
+        pass
 
     def reverse(self) -> None:
-        self._bits.reverse()
+        pass
 
     def __iter__(self) -> Iterable[bool]:
         for i in range(len(self)):
             yield self.getindex(i)
 
     def extend_left(self, other: MutableBitStore, /) -> None:
-        self._bits.extend_left(other._bits)
+        pass
 
     def _mutable_copy(self) -> MutableBitStore:
         """Always creates a copy, even if instance is immutable."""
-        return MutableBitStore.from_mutibs(self._bits.__copy__())
+        pass
 
     def copy(self) -> MutableBitStore:
-        return self._mutable_copy()
+        pass
 
     def __getitem__(self, item: Union[int, slice], /) -> Union[int, MutableBitStore]:
         # Use getindex or getslice instead
         raise NotImplementedError
 
     def getindex_msb0(self, index: int, /) -> bool:
-        return self._bits.__getitem__(index)
+        pass
 
     def getslice_withstep_msb0(self, key: slice, /) -> MutableBitStore:
-        return MutableBitStore(self._bits.__getitem__(key))
+        pass
 
     def getslice_withstep_lsb0(self, key: slice, /) -> MutableBitStore:
-        key = offset_slice_indices_lsb0(key, len(self))
-        return MutableBitStore(self._bits.__getitem__(key))
+        pass
 
     def getslice_msb0(self, start: Optional[int], stop: Optional[int], /) -> MutableBitStore:
-        return MutableBitStore(self._bits[start:stop])
+        pass
 
     def getslice_lsb0(self, start: Optional[int], stop: Optional[int], /) -> MutableBitStore:
-        s = offset_slice_indices_lsb0(slice(start, stop, None), len(self))
-        return MutableBitStore(self._bits[s.start:s.stop])
+        pass
 
     def getindex_lsb0(self, index: int, /) -> bool:
-        return self._bits.__getitem__(-index - 1)
+        pass
 
     @overload
     def setitem_lsb0(self, key: int, value: int, /) -> None:
@@ -408,47 +319,28 @@ class MutableBitStore:
         ...
 
     def setitem_lsb0(self, key: Union[int, slice], value: Union[int, MutableBitStore], /) -> None:
-        if isinstance(key, slice):
-            new_slice = offset_slice_indices_lsb0(key, len(self))
-            self._bits.__setitem__(new_slice, value._bits)
-        else:
-            self._bits.__setitem__(-key - 1, bool(value))
+        pass
 
     def delitem_lsb0(self, key: Union[int, slice], /) -> None:
-        if isinstance(key, slice):
-            new_slice = offset_slice_indices_lsb0(key, len(self))
-            self._bits.__delitem__(new_slice)
-        else:
-            self._bits.__delitem__(-key - 1)
+        pass
 
     def invert_msb0(self, index: Optional[int] = None, /) -> None:
-        if index is not None:
-            self._bits.invert(index)
-        else:
-            self._bits.invert()
+        pass
 
     def invert_lsb0(self, index: Optional[int] = None, /) -> None:
-        if index is not None:
-            self._bits.invert(-index - 1)
-        else:
-            self._bits.invert()
+        pass
 
     def any(self) -> bool:
-        return self._bits.any()
+        pass
 
     def all(self) -> bool:
-        return self._bits.all()
+        pass
 
     def __len__(self) -> int:
         return len(self._bits)
 
     def setitem_msb0(self, key, value, /):
-        if isinstance(value, (MutableBitStore, ConstBitStore)):
-            self._bits.__setitem__(key, value._bits)
-        else:
-            if isinstance(key, slice):
-                key = range(*key.indices(len(self)))
-            self._bits.set(value, key)
+        pass
 
     def delitem_msb0(self, key, /):
-        self._bits.__delitem__(key)
+        pass

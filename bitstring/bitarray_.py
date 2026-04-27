@@ -133,18 +133,15 @@ class BitArray(Bits):
     @classmethod
     def fromstring(cls: TBits, s: str, /) -> TBits:
         """Create a new bitstring from a formatted string."""
-        x = super().__new__(cls)
-        b = common_helpers.str_to_bitstore(s)
-        x._bitstore = b._mutable_copy()
-        return x
+        pass
 
     def copy(self: TBits) -> TBits:
         """Return a copy of the bitstring."""
-        return self.__copy__()
+        pass
 
     def _invert_all(self) -> None:
         """Invert every bit."""
-        self._bitstore.invert()
+        pass
 
     def __setattr__(self, attribute, value) -> None:
         try:
@@ -178,46 +175,10 @@ class BitArray(Bits):
         return s_copy
 
     def _setitem_int(self, key: int, value: Union[BitsType, int]) -> None:
-        if isinstance(value, numbers.Integral):
-            if value == 0:
-                self._bitstore[key] = 0
-                return
-            if value in (1, -1):
-                self._bitstore[key] = 1
-                return
-            raise ValueError(f"Cannot set a single bit with integer {value}.")
-        try:
-            value = self._create_from_bitstype(value)
-        except TypeError:
-            raise TypeError(f"Bitstring, integer or string expected. Got {type(value)}.")
-        positive_key = key + len(self) if key < 0 else key
-        if positive_key < 0 or positive_key >= len(self._bitstore):
-            raise IndexError(f"Bit position {key} out of range.")
-        self._bitstore[positive_key: positive_key + 1] = value._bitstore
+        pass
 
     def _setitem_slice(self, key: slice, value: BitsType) -> None:
-        if isinstance(value, numbers.Integral):
-            value = int(value)
-            if key.step not in [None, -1, 1]:
-                if value in [0, 1]:
-                    self.set(value, range(*key.indices(len(self))))
-                    return
-                else:
-                    raise ValueError("Can't assign an integer except 0 or 1 to a slice with a step value.")
-            # To find the length we first get the slice
-            s = self._bitstore.getslice(key.start, key.stop)
-            length = len(s)
-            # Now create an int of the correct length
-            if value >= 0:
-                value = self.__class__(uint=value, length=length)
-            else:
-                value = self.__class__(int=value, length=length)
-        else:
-            try:
-                value = self._create_from_bitstype(value)
-            except TypeError:
-                raise TypeError(f"Bitstring, integer or string expected. Got {type(value)}.")
-        self._bitstore.__setitem__(key, value._bitstore)
+        pass
 
     def __setitem__(self, key: Union[slice, int], value: BitsType) -> None:
         if isinstance(key, numbers.Integral):
@@ -294,35 +255,7 @@ class BitArray(Bits):
         return self
 
     def _replace(self, old: Bits, new: Bits, start: int, end: int, count: int, bytealigned: Optional[bool]) -> int:
-        if bytealigned is None:
-            bytealigned = bitstring.options.bytealigned
-        # First find all the places where we want to do the replacements
-        starting_points: List[int] = []
-        for x in self.findall(old, start, end, bytealigned=bytealigned):
-            if not starting_points:
-                starting_points.append(x)
-            elif x >= starting_points[-1] + len(old):
-                # Can only replace here if it hasn't already been replaced!
-                starting_points.append(x)
-            if count != 0 and len(starting_points) == count:
-                break
-        if not starting_points:
-            return 0
-        replacement_list = [self._bitstore.getslice(0, starting_points[0])]
-        for i in range(len(starting_points) - 1):
-            replacement_list.append(new._bitstore)
-            replacement_list.append(
-                self._bitstore.getslice(starting_points[i] + len(old), starting_points[i + 1]))
-        # Final replacement
-        replacement_list.append(new._bitstore)
-        replacement_list.append(self._bitstore.getslice(starting_points[-1] + len(old), None))
-        if bitstring.options.lsb0:
-            # Addition of bitarray is always on the right, so assemble from other end
-            replacement_list.reverse()
-        self._bitstore.clear()
-        for r in replacement_list:
-            self._bitstore += r
-        return len(starting_points)
+        pass
 
     def replace(self, old: BitsType, new: BitsType, start: Optional[int] = None, end: Optional[int] = None,
                 count: Optional[int] = None, bytealigned: Optional[bool] = None) -> int:
@@ -345,18 +278,7 @@ class BitArray(Bits):
         out of range.
 
         """
-        if count == 0:
-            return 0
-        old = self._create_from_bitstype(old)
-        new = self._create_from_bitstype(new)
-        if len(old) == 0:
-            raise ValueError("Empty bitstring cannot be replaced.")
-        start, end = self._validate_slice(start, end)
-
-        if new is self:
-            # Prevent self assignment woes
-            new = copy.copy(self)
-        return self._replace(old, new, start, end, 0 if count is None else count, bytealigned)
+        pass
 
     def insert(self, bs: BitsType, pos: int) -> None:
         """Insert bs at bit position pos.
@@ -367,16 +289,7 @@ class BitArray(Bits):
         Raises ValueError if pos < 0 or pos > len(self).
 
         """
-        bs = self._create_from_bitstype(bs)
-        if len(bs) == 0:
-            return
-        if bs is self:
-            bs = self._copy()
-        if pos < 0:
-            pos += len(self)
-        if not 0 <= pos <= len(self):
-            raise ValueError("Invalid insert position.")
-        self._insert(bs, pos)
+        pass
 
     def overwrite(self, bs: BitsType, pos: int) -> None:
         """Overwrite with bs at bit position pos.
@@ -387,14 +300,7 @@ class BitArray(Bits):
         Raises ValueError if pos < 0 or pos > len(self).
 
         """
-        bs = self._create_from_bitstype(bs)
-        if len(bs) == 0:
-            return
-        if pos < 0:
-            pos += len(self)
-        if pos < 0 or pos > len(self):
-            raise ValueError("Overwrite starts outside boundary of bitstring.")
-        self._overwrite(bs, pos)
+        pass
 
     def append(self, bs: BitsType) -> None:
         """Append a bitstring to the current bitstring.
@@ -402,7 +308,7 @@ class BitArray(Bits):
         bs -- The bitstring to append.
 
         """
-        self._append(bs)
+        pass
 
     def prepend(self, bs: BitsType) -> None:
         """Prepend a bitstring to the current bitstring.
@@ -410,14 +316,13 @@ class BitArray(Bits):
         bs -- The bitstring to prepend.
 
         """
-        self._prepend(bs)
+        pass
 
     def _append_msb0(self, bs: BitsType) -> None:
-        self._addright(self._create_from_bitstype(bs))
+        pass
 
     def _append_lsb0(self, bs: BitsType) -> None:
-        bs = self._create_from_bitstype(bs)
-        self._addleft(bs)
+        pass
 
     def reverse(self, start: Optional[int] = None, end: Optional[int] = None) -> None:
         """Reverse bits in-place.
@@ -431,13 +336,7 @@ class BitArray(Bits):
         Raises ValueError if start < 0, end > len(self) or end < start.
 
         """
-        start, end = self._validate_slice(start, end)
-        if start == 0 and end == len(self):
-            self._bitstore.reverse()
-            return
-        s = self._slice(start, end)
-        s._bitstore.reverse()
-        self[start:end] = s
+        pass
 
     def set(self, value: Any, pos: Optional[Union[int, Iterable[int]]] = None) -> None:
         """Set one or many bits to 1 or 0.
@@ -450,18 +349,7 @@ class BitArray(Bits):
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
         """
-        if pos is None:
-            # Set all bits to either 1 or 0
-            self._bitstore.__setitem__(slice(None), bool(value))
-            return
-        if not isinstance(pos, abc.Iterable):
-            pos = (pos,)
-        v = 1 if value else 0
-        if isinstance(pos, range):
-            self._bitstore.__setitem__(slice(pos.start, pos.stop, pos.step), v)
-            return
-        for p in pos:
-            self._bitstore[p] = v
+        pass
 
     def invert(self, pos: Optional[Union[Iterable[int], int]] = None) -> None:
         """Invert one or many bits from 0 to 1 or vice versa.
@@ -472,19 +360,7 @@ class BitArray(Bits):
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
         """
-        if pos is None:
-            self._invert_all()
-            return
-        if not isinstance(pos, abc.Iterable):
-            pos = (pos,)
-        length = len(self)
-
-        for p in pos:
-            if p < 0:
-                p += length
-            if not 0 <= p < length:
-                raise IndexError(f"Bit position {p} out of range.")
-            self._invert(p)
+        pass
 
     def ror(self, bits: int, start: Optional[int] = None, end: Optional[int] = None) -> None:
         """Rotate bits to the right in-place.
@@ -496,20 +372,10 @@ class BitArray(Bits):
         Raises ValueError if bits < 0.
 
         """
-        if not len(self):
-            raise Error("Cannot rotate an empty bitstring.")
-        if bits < 0:
-            raise ValueError("Cannot rotate by negative amount.")
-        self._ror(bits, start, end)
+        pass
 
     def _ror_msb0(self, bits: int, start: Optional[int] = None, end: Optional[int] = None) -> None:
-        start, end = self._validate_slice(start, end)  # the _slice deals with msb0/lsb0
-        bits %= (end - start)
-        if not bits:
-            return
-        rhs = self._slice(end - bits, end)
-        self._delete(bits, end - bits)
-        self._insert(rhs, start)
+        pass
 
     def rol(self, bits: int, start: Optional[int] = None, end: Optional[int] = None) -> None:
         """Rotate bits to the left in-place.
@@ -521,20 +387,10 @@ class BitArray(Bits):
         Raises ValueError if bits < 0.
 
         """
-        if not len(self):
-            raise Error("Cannot rotate an empty bitstring.")
-        if bits < 0:
-            raise ValueError("Cannot rotate by negative amount.")
-        self._rol(bits, start, end)
+        pass
 
     def _rol_msb0(self, bits: int, start: Optional[int] = None, end: Optional[int] = None):
-        start, end = self._validate_slice(start, end)
-        bits %= (end - start)
-        if bits == 0:
-            return
-        lhs = self._slice(start, start + bits)
-        self._delete(bits, start)
-        self._insert(lhs, end - bits)
+        pass
 
     def byteswap(self, fmt: Optional[Union[int, Iterable[int], str]] = None, start: Optional[int] = None,
                  end: Optional[int] = None, repeat: bool = True) -> int:
@@ -549,53 +405,8 @@ class BitArray(Bits):
                   as much as possible.
 
         """
-        start_v, end_v = self._validate_slice(start, end)
-        if fmt is None or fmt == 0:
-            # reverse all of the whole bytes.
-            bytesizes = [(end_v - start_v) // 8]
-        elif isinstance(fmt, numbers.Integral):
-            if fmt < 0:
-                raise ValueError(f"Improper byte length {fmt}.")
-            bytesizes = [fmt]
-        elif isinstance(fmt, str):
-            if not (m := utils.BYTESWAP_STRUCT_PACK_RE.match(fmt)):
-                raise ValueError(f"Cannot parse format string {fmt}.")
-            # Split the format string into a list of 'q', '4h' etc.
-            formatlist = re.findall(utils.STRUCT_SPLIT_RE, m.group('fmt'))
-            # Now deal with multiplicative factors, 4h -> hhhh etc.
-            bytesizes = []
-            for f in formatlist:
-                if len(f) == 1:
-                    bytesizes.append(utils.PACK_CODE_SIZE[f])
-                else:
-                    bytesizes.extend([utils.PACK_CODE_SIZE[f[-1]]] * int(f[:-1]))
-        elif isinstance(fmt, abc.Iterable):
-            bytesizes = fmt
-            for bytesize in bytesizes:
-                if not isinstance(bytesize, numbers.Integral) or bytesize < 0:
-                    raise ValueError(f"Improper byte length {bytesize}.")
-        else:
-            raise TypeError("Format must be an integer, string or iterable.")
-
-        repeats = 0
-        totalbitsize: int = 8 * sum(bytesizes)
-        if not totalbitsize:
-            return 0
-        if repeat:
-            # Try to repeat up to the end of the bitstring.
-            finalbit = end_v
-        else:
-            # Just try one (set of) byteswap(s).
-            finalbit = start_v + totalbitsize
-        for patternend in range(start_v + totalbitsize, finalbit + 1, totalbitsize):
-            bytestart = patternend - totalbitsize
-            for bytesize in bytesizes:
-                byteend = bytestart + bytesize * 8
-                self._reversebytes(bytestart, byteend)
-                bytestart += bytesize * 8
-            repeats += 1
-        return repeats
+        pass
 
     def clear(self) -> None:
         """Remove all bits, reset to zero length."""
-        self._clear()
+        pass

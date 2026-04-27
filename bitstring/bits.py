@@ -129,47 +129,10 @@ class Bits:
 
     @classmethod
     def _create_from_bitstype(cls: Type[TBits], auto: BitsType, /) -> TBits:
-        if isinstance(auto, cls):
-            return auto
-        b = super().__new__(cls)
-        b._setauto_no_length_or_offset(auto)
-        return b
+        pass
 
     def _initialise(self, auto: Any, /, length: Optional[int], offset: Optional[int], immutable: bool, **kwargs) -> None:
-        if auto is not None:
-            if isinstance(auto, numbers.Integral):
-                # Initialise with s zero bits.
-                if auto < 0:
-                    raise bitstring.CreationError(f"Can't create bitstring of negative length {auto}.")
-                if immutable:
-                    self._bitstore = ConstBitStore.from_zeros(int(auto))
-                else:
-                    self._bitstore = MutableBitStore.from_zeros(int(auto))
-                return
-            self._setauto(auto, length, offset)
-        else:
-            k, v = kwargs.popitem()
-            if k == 'bytes':
-                # Special case for bytes as we want to allow offsets and lengths to work only on creation.
-                self._setbytes_with_truncation(v, length, offset)
-            elif k == 'filename':
-                self._setfile(v, length, offset)
-            elif k == 'bitarray':
-                self._setbitarray(v, length, offset)
-            elif k == 'auto':
-                raise bitstring.CreationError(
-                    f"The 'auto' parameter should not be given explicitly - just use the first positional argument. "
-                    f"Instead of '{self.__class__.__name__}(auto=x)' use '{self.__class__.__name__}(x)'.")
-            else:
-                if offset is not None:
-                    raise bitstring.CreationError(f"offset cannot be used when initialising with '{k}'.")
-                try:
-                    Dtype(k, length).set_fn(self, v)
-                except ValueError as e:
-                    raise bitstring.CreationError(e)
-        if not immutable:
-            # TODO: This copy is not a good idea.
-            self._bitstore = self._bitstore._mutable_copy()
+        pass
 
     def __getattr__(self, attribute: str) -> Any:
         # Support for arbitrary attributes like u16 or f64.
@@ -281,15 +244,7 @@ class Bits:
                         ', ', '0b', self[length - bits_at_end:]._getbin()))
 
     def _repr(self, classname: str, length: int, pos: int):
-        pos_string = f', pos={pos}' if pos else ''
-        if hasattr(self, '_filename') and self._filename:
-            return f"{classname}(filename={self._filename!r}, length={length}{pos_string})"
-        else:
-            s = self.__str__()
-            lengthstring = ''
-            if s.endswith('...'):
-                lengthstring = f'  # length={length}'
-            return f"{classname}('{s}'{pos_string}){lengthstring}"
+        pass
 
     def __repr__(self) -> str:
         """Return representation that could be used to recreate the bitstring.
@@ -381,8 +336,7 @@ class Bits:
 
     def _imul(self: TBits, n: int, /) -> TBits:
         """Concatenate n copies of self in place. Return self."""
-        self._bitstore.__imul__(n)
-        return self
+        pass
 
     def __rmul__(self: TBits, n: int, /) -> TBits:
         """Return bitstring consisting of n concatenations of self.
@@ -495,328 +449,173 @@ class Bits:
 
     def _clear(self) -> None:
         """Reset the bitstring to an empty state."""
-        self._bitstore.clear()
+        pass
 
     def _setauto_no_length_or_offset(self, s: BitsType, /) -> None:
         """Set bitstring from a bitstring, file, bool, array, iterable or string."""
-        if isinstance(s, str):
-            self._bitstore = common_helpers.str_to_bitstore(s)
-        elif isinstance(s, Bits):
-            self._bitstore = s._bitstore.copy()
-        elif isinstance(s, (bytes, bytearray, memoryview)):
-            self._bitstore = ConstBitStore.from_bytes(bytearray(s))
-        elif isinstance(s, io.BytesIO):
-            self._bitstore = ConstBitStore.from_bytes(s.getvalue())
-        elif isinstance(s, io.BufferedReader):
-            self._setfile(s.name)
-        elif isinstance(s, bitarray.bitarray):
-            self._bitstore = ConstBitStore(s)
-        elif isinstance(s, array.array):
-            self._bitstore = ConstBitStore.from_bytes(s.tobytes())
-        elif isinstance(s, abc.Iterable):
-            # Evaluate each item as True or False and set bits to 1 or 0.
-            self._setbin(''.join(str(int(bool(x))) for x in s))
-        elif isinstance(s, numbers.Integral):
-            raise TypeError(f"It's no longer possible to auto initialise a bitstring from an integer."
-                            f" Use '{self.__class__.__name__}({s})' instead of just '{s}' as this makes it "
-                            f"clearer that a bitstring of {int(s)} zero bits will be created.")
-        else:
-            raise TypeError(f"Cannot initialise bitstring from type '{type(s)}'.")
+        pass
 
     def _setauto(self, s: BitsType, length: Optional[int], offset: Optional[int], /) -> None:
         """Set bitstring from a bitstring, file, bool, array, iterable or string."""
-        # As s can be so many different things it's important to do the checks
-        # in the correct order, as some types are also other allowed types.
-        if offset is None and length is None:
-            self._setauto_no_length_or_offset(s)
-            return
-        if offset is None:
-            offset = 0
-
-        if isinstance(s, io.BytesIO):
-            if length is None:
-                length = s.seek(0, 2) * 8 - offset
-            byteoffset, offset = divmod(offset, 8)
-            bytelength = (length + byteoffset * 8 + offset + 7) // 8 - byteoffset
-            if length + byteoffset * 8 + offset > s.seek(0, 2) * 8:
-                raise bitstring.CreationError("BytesIO object is not long enough for specified length and offset.")
-            self._bitstore = ConstBitStore.from_bytes(s.getvalue()[byteoffset: byteoffset + bytelength]).getslice(
-                offset, offset + length)
-            return
-
-        if isinstance(s, io.BufferedReader):
-            self._setfile(s.name, length, offset)
-            return
-
-        if isinstance(s, (str, Bits, bytes, bytearray, memoryview, io.BytesIO, io.BufferedReader,
-                          bitarray.bitarray, array.array, abc.Iterable)):
-            raise bitstring.CreationError(f"Cannot initialise bitstring from type '{type(s)}' when using explicit lengths or offsets.")
-        raise TypeError(f"Cannot initialise bitstring from type '{type(s)}'.")
+        pass
 
     def _setfile(self, filename: str, length: Optional[int] = None, offset: Optional[int] = None) -> None:
         """Use file as source of bits."""
-        with open(pathlib.Path(filename), 'rb') as source:
-            if offset is None:
-                offset = 0
-            m = mmap.mmap(source.fileno(), 0, access=mmap.ACCESS_READ)
-            if offset == 0:
-                self._filename = source.name
-                self._bitstore = ConstBitStore.frombuffer(m, length=length)
-            else:
-                # If offset is given then always read into memory.
-                temp = ConstBitStore.frombuffer(m)
-                if length is None:
-                    if offset > len(temp):
-                        raise bitstring.CreationError(f"The offset of {offset} bits is greater than the file length ({len(temp)} bits).")
-                    self._bitstore = temp.getslice(offset, None)
-                else:
-                    self._bitstore = temp.getslice(offset, offset + length)
-                    if len(self) != length:
-                        raise bitstring.CreationError(f"Can't use a length of {length} bits and an offset of {offset} bits as file length is only {len(temp)} bits.")
+        pass
 
     def _setbitarray(self, ba: bitarray.bitarray, length: Optional[int], offset: Optional[int]) -> None:
-        if offset is None:
-            offset = 0
-        if offset > len(ba):
-            raise bitstring.CreationError(f"Offset of {offset} too large for bitarray of length {len(ba)}.")
-        if length is None:
-            self._bitstore = ConstBitStore(ba[offset:])
-        else:
-            if offset + length > len(ba):
-                raise bitstring.CreationError(
-                    f"Offset of {offset} and length of {length} too large for bitarray of length {len(ba)}.")
-            self._bitstore = ConstBitStore(ba[offset: offset + length])
+        pass
 
     def _setbits(self, bs: BitsType, length: None = None) -> None:
-        bs = Bits._create_from_bitstype(bs)
-        self._bitstore = bs._bitstore
+        pass
 
     def _setp3binary(self, f: float) -> None:
-        self._bitstore = common_helpers.p3binary2bitstore(f)
+        pass
 
     def _setp4binary(self, f: float) -> None:
-        self._bitstore = common_helpers.p4binary2bitstore(f)
+        pass
 
     def _sete4m3mxfp(self, f: float) -> None:
-        self._bitstore = common_helpers.e4m3mxfp2bitstore(f)
+        pass
 
     def _sete5m2mxfp(self, f: float) -> None:
-        self._bitstore = common_helpers.e5m2mxfp2bitstore(f)
+        pass
 
     def _sete3m2mxfp(self, f: float) -> None:
-        self._bitstore = common_helpers.e3m2mxfp2bitstore(f)
+        pass
 
     def _sete2m3mxfp(self, f: float) -> None:
-        self._bitstore = common_helpers.e2m3mxfp2bitstore(f)
+        pass
 
     def _sete2m1mxfp(self, f: float) -> None:
-        self._bitstore = common_helpers.e2m1mxfp2bitstore(f)
+        pass
 
     def _sete8m0mxfp(self, f: float) -> None:
-        self._bitstore = common_helpers.e8m0mxfp2bitstore(f)
+        pass
 
     def _setmxint(self, f: float) -> None:
-        self._bitstore = common_helpers.mxint2bitstore(f)
+        pass
 
     def _setbytes(self, data: Union[bytearray, bytes, List], length:None = None) -> None:
         """Set the data from a bytes or bytearray object."""
-        self._bitstore = ConstBitStore.from_bytes(bytes(data))
+        pass
 
     def _setbytes_with_truncation(self, data: Union[bytearray, bytes], length: Optional[int] = None, offset: Optional[int] = None) -> None:
         """Set the data from a bytes or bytearray object, with optional offset and length truncations."""
-        if offset is None and length is None:
-            return self._setbytes(data)
-        data = bytearray(data)
-        if offset is None:
-            offset = 0
-        if length is None:
-            # Use to the end of the data
-            length = len(data) * 8 - offset
-        else:
-            if length + offset > len(data) * 8:
-                raise bitstring.CreationError(f"Not enough data present. Need {length + offset} bits, have {len(data) * 8}.")
-        self._bitstore = ConstBitStore.from_bytes(data).getslice_msb0(offset, offset + length)
+        pass
 
     def _getbytes(self) -> bytes:
         """Return the data as an ordinary bytes object."""
-        if len(self) % 8:
-            raise bitstring.InterpretError("Cannot interpret as bytes unambiguously - not multiple of 8 bits.")
-        return self._bitstore.to_bytes()
+        pass
 
     _unprintable = list(range(0x00, 0x20))  # ASCII control characters
     _unprintable.extend(range(0x7f, 0xff))  # DEL char + non-ASCII
 
     def _getbytes_printable(self) -> str:
         """Return an approximation of the data as a string of printable characters."""
-        bytes_ = self._getbytes()
-        # For everything that isn't printable ASCII, use value from 'Latin Extended-A' unicode block.
-        string = ''.join(chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_)
-        return string
+        pass
 
     def _setuint(self, uint: int, length: Optional[int] = None) -> None:
         """Reset the bitstring to have given unsigned int interpretation."""
-        # If no length given, and we've previously been given a length, use it.
-        if length is None and hasattr(self, 'len') and len(self) != 0:
-            length = len(self)
-        if length is None or length == 0:
-            raise bitstring.CreationError("A non-zero length must be specified with a uint initialiser.")
-        self._bitstore = helpers.int2bitstore(uint, length, False)
+        pass
 
     def _getuint(self) -> int:
         """Return data as an unsigned int."""
-        if len(self) == 0:
-            raise bitstring.InterpretError("Cannot interpret a zero length bitstring as an integer.")
-        return self._bitstore.to_u()
+        pass
 
     def _setint(self, int_: int, length: Optional[int] = None) -> None:
         """Reset the bitstring to have given signed int interpretation."""
-        # If no length given, and we've previously been given a length, use it.
-        if length is None and hasattr(self, 'len') and len(self) != 0:
-            length = len(self)
-        if length is None or length == 0:
-            raise bitstring.CreationError("A non-zero length must be specified with an int initialiser.")
-        self._bitstore = helpers.int2bitstore(int_, length, True)
+        pass
 
     def _getint(self) -> int:
         """Return data as a two's complement signed int."""
-        if len(self) == 0:
-            raise bitstring.InterpretError("Cannot interpret bitstring without a length as an integer.")
-        return self._bitstore.to_i()
+        pass
 
     def _setuintbe(self, uintbe: int, length: Optional[int] = None) -> None:
         """Set the bitstring to a big-endian unsigned int interpretation."""
-        if length is None and hasattr(self, 'len') and len(self) != 0:
-            length = len(self)
-        if length is None or length == 0:
-            raise bitstring.CreationError("A non-zero length must be specified with a uintbe initialiser.")
-        self._bitstore = helpers.int2bitstore(uintbe, length, False)
+        pass
 
     def _getuintbe(self) -> int:
         """Return data as a big-endian two's complement unsigned int."""
-        if len(self) % 8:
-            raise bitstring.InterpretError(f"Big-endian integers must be whole-byte. Length = {len(self)} bits.")
-        return self._getuint()
+        pass
 
     def _setintbe(self, intbe: int, length: Optional[int] = None) -> None:
         """Set bitstring to a big-endian signed int interpretation."""
-        if length is None and hasattr(self, 'len') and len(self) != 0:
-            length = len(self)
-        if length is None or length == 0:
-            raise bitstring.CreationError("A non-zero length must be specified with a intbe initialiser.")
-        self._bitstore = helpers.int2bitstore(intbe, length, True)
+        pass
 
     def _getintbe(self) -> int:
         """Return data as a big-endian two's complement signed int."""
-        if len(self) % 8:
-            raise bitstring.InterpretError(f"Big-endian integers must be whole-byte. Length = {len(self)} bits.")
-        return self._getint()
+        pass
 
     def _setuintle(self, uintle: int, length: Optional[int] = None) -> None:
-        if length is None and hasattr(self, 'len') and len(self) != 0:
-            length = len(self)
-        if length is None or length == 0:
-            raise bitstring.CreationError("A non-zero length must be specified with a uintle initialiser.")
-        self._bitstore = helpers.intle2bitstore(uintle, length, False)
+        pass
 
     def _getuintle(self) -> int:
         """Interpret as a little-endian unsigned int."""
-        if len(self) % 8:
-            raise bitstring.InterpretError(f"Little-endian integers must be whole-byte. Length = {len(self)} bits.")
-        bs = ConstBitStore.from_bytes(self._bitstore.to_bytes()[::-1])
-        return bs.to_u()
+        pass
 
     def _setintle(self, intle: int, length: Optional[int] = None) -> None:
-        if length is None and hasattr(self, 'len') and len(self) != 0:
-            length = len(self)
-        if length is None or length == 0:
-            raise bitstring.CreationError("A non-zero length must be specified with an intle initialiser.")
-        self._bitstore = helpers.intle2bitstore(intle, length, True)
+        pass
 
     def _getintle(self) -> int:
         """Interpret as a little-endian signed int."""
-        if len(self) % 8:
-            raise bitstring.InterpretError(f"Little-endian integers must be whole-byte. Length = {len(self)} bits.")
-        bs = ConstBitStore.from_bytes(self._bitstore.to_bytes()[::-1])
-        return bs.to_i()
+        pass
 
     def _getp4binary(self) -> float:
-        u = self._getuint()
-        return p4binary_fmt.lut_binary8_to_float[u]
+        pass
 
     def _getp3binary(self) -> float:
-        u = self._getuint()
-        return p3binary_fmt.lut_binary8_to_float[u]
+        pass
 
     def _gete4m3mxfp(self) -> float:
-        u = self._getuint()
-        return e4m3mxfp_saturate_fmt.lut_int_to_float[u]
+        pass
 
     def _gete5m2mxfp(self) -> float:
-        u = self._getuint()
-        return e5m2mxfp_saturate_fmt.lut_int_to_float[u]
+        pass
 
     def _gete3m2mxfp(self) -> float:
-        u = self._getuint()
-        return e3m2mxfp_fmt.lut_int_to_float[u]
+        pass
 
     def _gete2m3mxfp(self) -> float:
-        u = self._getuint()
-        return e2m3mxfp_fmt.lut_int_to_float[u]
+        pass
 
     def _gete2m1mxfp(self) -> float:
-        u = self._getuint()
-        return e2m1mxfp_fmt.lut_int_to_float[u]
+        pass
 
     def _gete8m0mxfp(self) -> float:
-        u = self._getuint() - 127
-        if u == 128:
-            return float('nan')
-        return 2.0 ** u
+        pass
 
     def _getmxint(self) -> float:
-        u = self._getint()
-        return float(u) * 2 ** -6
+        pass
 
     def _setfloat(self, f: float, length: Optional[int], big_endian: bool) -> None:
-        if length is None and hasattr(self, 'len') and len(self) != 0:
-            length = len(self)
-        if length is None or length not in [16, 32, 64]:
-            raise bitstring.CreationError("A length of 16, 32, or 64 must be specified with a float initialiser.")
-        self._bitstore = helpers.float2bitstore(f, length, big_endian)
+        pass
 
     def _setfloatbe(self, f: float, length: Optional[int] = None) -> None:
-        self._setfloat(f, length, True)
+        pass
 
     def _getfloatbe(self) -> float:
         """Interpret the whole bitstring as a big-endian float."""
-        fmt = {16: '>e', 32: '>f', 64: '>d'}[len(self)]
-        return struct.unpack(fmt, self._bitstore.to_bytes())[0]
+        pass
 
     def _setfloatle(self, f: float, length: Optional[int] = None) -> None:
-        self._setfloat(f, length, False)
+        pass
 
     def _getfloatle(self) -> float:
         """Interpret the whole bitstring as a little-endian float."""
-        fmt = {16: '<e', 32: '<f', 64: '<d'}[len(self)]
-        return struct.unpack(fmt, self._bitstore.to_bytes())[0]
+        pass
 
     def _getbfloatbe(self) -> float:
-        zero_padded = self + Bits(16)
-        return zero_padded._getfloatbe()
+        pass
 
     def _setbfloatbe(self, f: Union[float, str], length: Optional[int] = None) -> None:
-        if length is not None and length != 16:
-            raise bitstring.CreationError(f"bfloats must be length 16, received a length of {length} bits.")
-        self._bitstore = common_helpers.bfloat2bitstore(f, True)
+        pass
 
     def _getbfloatle(self) -> float:
-        zero_padded = Bits(16) + self
-        return zero_padded._getfloatle()
+        pass
 
     def _setbfloatle(self, f: Union[float, str], length: Optional[int] = None) -> None:
-        if length is not None and length != 16:
-            raise bitstring.CreationError(f"bfloats must be length 16, received a length of {length} bits.")
-        self._bitstore = common_helpers.bfloat2bitstore(f, False)
+        pass
 
     def _setue(self, i: int) -> None:
         """Initialise bitstring with unsigned exponential-Golomb code for integer i.
@@ -824,9 +623,7 @@ class Bits:
         Raises CreationError if i < 0.
 
         """
-        if bitstring.options.lsb0:
-            raise bitstring.CreationError("Exp-Golomb codes cannot be used in lsb0 mode.")
-        self._bitstore = common_helpers.ue2bitstore(i)
+        pass
 
     def _readue(self, pos: int) -> Tuple[int, int]:
         """Return interpretation of next bits as unsigned exponential-Golomb code.
@@ -835,55 +632,23 @@ class Bits:
         reading the code.
 
         """
-        if bitstring.options.lsb0:
-            raise bitstring.ReadError("Exp-Golomb codes cannot be read in lsb0 mode.")
-        oldpos = pos
-        try:
-            while not self[pos]:
-                pos += 1
-        except IndexError:
-            raise bitstring.ReadError("Read off end of bitstring trying to read code.")
-        leadingzeros = pos - oldpos
-        codenum = (1 << leadingzeros) - 1
-        if leadingzeros > 0:
-            if pos + leadingzeros + 1 > len(self):
-                raise bitstring.ReadError("Read off end of bitstring trying to read code.")
-            codenum += self[pos + 1:pos + 1 + leadingzeros]._getuint()
-            pos += leadingzeros + 1
-        else:
-            assert codenum == 0
-            pos += 1
-        return codenum, pos
+        pass
 
     def _getue(self) -> Tuple[int, int]:
-        try:
-            return self._readue(0)
-        except bitstring.ReadError:
-            raise bitstring.InterpretError
+        pass
 
     def _getse(self) -> Tuple[int, int]:
-        try:
-            return self._readse(0)
-        except bitstring.ReadError:
-            raise bitstring.InterpretError
+        pass
 
     def _getuie(self) -> Tuple[int, int]:
-        try:
-            return self._readuie(0)
-        except bitstring.ReadError:
-            raise bitstring.InterpretError
+        pass
 
     def _getsie(self) -> Tuple[int, int]:
-        try:
-            return self._readsie(0)
-        except bitstring.ReadError:
-            raise bitstring.InterpretError
+        pass
 
     def _setse(self, i: int) -> None:
         """Initialise bitstring with signed exponential-Golomb code for integer i."""
-        if bitstring.options.lsb0:
-            raise bitstring.CreationError("Exp-Golomb codes cannot be used in lsb0 mode.")
-        self._bitstore = common_helpers.se2bitstore(i)
+        pass
 
     def _readse(self, pos: int) -> Tuple[int, int]:
         """Return interpretation of next bits as a signed exponential-Golomb code.
@@ -894,9 +659,7 @@ class Bits:
         reading the code.
 
         """
-        codenum, pos = self._readue(pos)
-        m = (codenum + 1) // 2
-        return (m, pos) if codenum % 2 else (-m, pos)
+        pass
 
     def _setuie(self, i: int) -> None:
         """Initialise bitstring with unsigned interleaved exponential-Golomb code for integer i.
@@ -904,9 +667,7 @@ class Bits:
         Raises CreationError if i < 0.
 
         """
-        if bitstring.options.lsb0:
-            raise bitstring.CreationError("Exp-Golomb codes cannot be used in lsb0 mode.")
-        self._bitstore = common_helpers.uie2bitstore(i)
+        pass
 
     def _readuie(self, pos: int) -> Tuple[int, int]:
         """Return interpretation of next bits as unsigned interleaved exponential-Golomb code.
@@ -915,25 +676,11 @@ class Bits:
         reading the code.
 
         """
-        if bitstring.options.lsb0:
-            raise bitstring.ReadError("Exp-Golomb codes cannot be read in lsb0 mode.")
-        try:
-            codenum: int = 1
-            while not self[pos]:
-                pos += 1
-                codenum <<= 1
-                codenum += self[pos]
-                pos += 1
-            pos += 1
-        except IndexError:
-            raise bitstring.ReadError("Read off end of bitstring trying to read code.")
-        return codenum - 1, pos
+        pass
 
     def _setsie(self, i: int, ) -> None:
         """Initialise bitstring with signed interleaved exponential-Golomb code for integer i."""
-        if bitstring.options.lsb0:
-            raise bitstring.CreationError("Exp-Golomb codes cannot be used in lsb0 mode.")
-        self._bitstore = common_helpers.sie2bitstore(i)
+        pass
 
     def _readsie(self, pos: int) -> Tuple[int, int]:
         """Return interpretation of next bits as a signed interleaved exponential-Golomb code.
@@ -944,52 +691,41 @@ class Bits:
         reading the code.
 
         """
-        codenum, pos = self._readuie(pos)
-        if not codenum:
-            return 0, pos
-        try:
-            return (-codenum, pos + 1) if self[pos] else (codenum, pos + 1)
-        except IndexError:
-            raise bitstring.ReadError("Read off end of bitstring trying to read code.")
+        pass
 
     def _setbool(self, value: Union[bool, str]) -> None:
         # We deliberately don't want to have implicit conversions to bool here.
         # If we did then it would be difficult to deal with the 'False' string.
-        if value in (1, 'True', '1'):
-            self._bitstore = ConstBitStore.from_bin('1')
-        elif value in (0, 'False', '0'):
-            self._bitstore = ConstBitStore.from_bin('0')
-        else:
-            raise bitstring.CreationError(f"Cannot initialise boolean with {value}.")
+        pass
 
     def _getbool(self) -> bool:
-        return self[0]
+        pass
 
     def _getpad(self) -> None:
-        return None
+        pass
 
     def _setpad(self, value: None, length: int) -> None:
-        self._bitstore = ConstBitStore.from_zeros(length)
+        pass
 
     def _setbin(self, binstring: str, length: None = None) -> None:
         """Reset the bitstring to the value given in binstring."""
-        self._bitstore = helpers.bin2bitstore(binstring)
+        pass
 
     def _getbin(self) -> str:
         """Return interpretation as a binary string."""
-        return self._bitstore.to_bin()
+        pass
 
     def _setoct(self, octstring: str, length: None = None) -> None:
         """Reset the bitstring to have the value given in octstring."""
-        self._bitstore = helpers.oct2bitstore(octstring)
+        pass
 
     def _getoct(self) -> str:
         """Return interpretation as an octal string."""
-        return self._bitstore.to_oct()
+        pass
 
     def _sethex(self, hexstring: str, length: None = None) -> None:
         """Reset the bitstring to have the value given in hexstring."""
-        self._bitstore = helpers.hex2bitstore(hexstring)
+        pass
 
     def _gethex(self) -> str:
         """Return the hexadecimal representation as a string.
@@ -997,110 +733,71 @@ class Bits:
         Raises an InterpretError if the bitstring's length is not a multiple of 4.
 
         """
-        return self._bitstore.to_hex()
+        pass
 
     def _getlength(self) -> int:
         """Return the length of the bitstring in bits."""
-        return len(self._bitstore)
+        pass
 
     def _copy(self: TBits) -> TBits:
         """Create and return a new copy of the Bits (always in memory)."""
-        # Note that __copy__ may choose to return self if it's immutable. This method always makes a copy.
-        s_copy = self.__class__()
-        s_copy._bitstore = self._bitstore._mutable_copy()
-        return s_copy
+        pass
 
     def _slice(self: TBits, start: int, end: int) -> TBits:
         """Used internally to get a slice, without error checking."""
-        bs = self.__class__()
-        bs._bitstore = self._bitstore.getslice(start, end)
-        return bs
+        pass
 
     def _absolute_slice(self: TBits, start: int, end: int) -> TBits:
         """Used internally to get a slice, without error checking.
         Uses MSB0 bit numbering even if LSB0 is set."""
-        if end == start:
-            return self.__class__()
-        assert start < end, f"start={start}, end={end}"
-        bs = self.__class__()
-        bs._bitstore = self._bitstore.getslice_msb0(start, end)
-        return bs
+        pass
 
     def _readtoken(self, name: str, pos: int, length: Optional[int]) -> Tuple[Union[float, int, str, None, Bits], int]:
         """Reads a token from the bitstring and returns the result."""
-        dtype = dtype_register.get_dtype(name, length)
-        if dtype.bitlength is not None and dtype.bitlength > len(self) - pos:
-            raise bitstring.ReadError("Reading off the end of the data. "
-                            f"Tried to read {dtype.bitlength} bits when only {len(self) - pos} available.")
-        try:
-            val = dtype.read_fn(self, pos)
-            if isinstance(val, tuple):
-                return val
-            else:
-                assert length is not None
-                return val, pos + dtype.bitlength
-        except KeyError:
-            raise ValueError(f"Can't parse token {name}:{length}")
+        pass
 
     def _addright(self, bs: Bits, /) -> None:
         """Add a bitstring to the RHS of the current bitstring."""
-        self._bitstore += bs._bitstore
+        pass
 
     def _addleft(self, bs: Bits, /) -> None:
         """Prepend a bitstring to the current bitstring."""
-        self._bitstore.extend_left(bs._bitstore)
+        pass
 
     def _insert(self, bs: Bits, pos: int, /) -> None:
         """Insert bs at pos."""
-        assert 0 <= pos <= len(self)
-        self._bitstore[pos: pos] = bs._bitstore
-        return
+        pass
 
     def _overwrite(self, bs: Bits, pos: int, /) -> None:
         """Overwrite with bs at pos."""
-        assert 0 <= pos <= len(self)
-        if bs is self:
-            # Just overwriting with self, so do nothing.
-            assert pos == 0
-            return
-        self._bitstore[pos: pos + len(bs)] = bs._bitstore
+        pass
 
     def _delete(self, bits: int, pos: int, /) -> None:
         """Delete bits at pos."""
-        assert 0 <= pos <= len(self)
-        assert pos + bits <= len(self), f"pos={pos}, bits={bits}, len={len(self)}"
-        del self._bitstore[pos: pos + bits]
+        pass
 
     def _reversebytes(self, start: int, end: int) -> None:
         """Reverse bytes in-place."""
-        assert (end - start) % 8 == 0
-        self._bitstore[start:end] = ConstBitStore.from_bytes(self._bitstore.getslice(start, end).to_bytes()[::-1])
+        pass
 
     def _invert(self, pos: int, /) -> None:
         """Flip bit at pos 1<->0."""
-        assert 0 <= pos < len(self)
-        self._bitstore.invert(pos)
+        pass
 
     def _ilshift(self: TBits, n: int, /) -> TBits:
         """Shift bits by n to the left in place. Return self."""
-        self._bitstore.__ilshift__(n)
-        return self
+        pass
 
     def _irshift(self: TBits, n: int, /) -> TBits:
         """Shift bits by n to the right in place. Return self."""
-        self._bitstore.__irshift__(n)
-        return self
+        pass
 
     def _getbits(self: TBits):
-        return self._copy()
+        pass
 
     def _validate_slice(self, start: Optional[int], end: Optional[int]) -> Tuple[int, int]:
         """Validate start and end and return them as positive bit positions."""
-        start = 0 if start is None else (start + len(self) if start < 0 else start)
-        end = len(self) if end is None else (end + len(self) if end < 0 else end)
-        if not 0 <= start <= end <= len(self):
-            raise ValueError(f"Invalid slice positions for bitstring length {len(self)}: start={start}, end={end}.")
-        return start, end
+        pass
 
     def unpack(self, fmt: Union[str, List[Union[str, int]]], **kwargs) -> List[Union[int, float, str, Bits, bool, bytes, None]]:
         """Interpret the whole bitstring using fmt and return list.
@@ -1117,66 +814,14 @@ class Bits:
         See the docstring for 'read' for token examples.
 
         """
-        return self._readlist(fmt, 0, **kwargs)[0]
+        pass
 
     def _readlist(self, fmt: Union[str, List[Union[str, int, Dtype]]], pos: int, **kwargs) \
             -> Tuple[List[Union[int, float, str, Bits, bool, bytes, None]], int]:
-        if isinstance(fmt, str):
-            fmt = [fmt]
-        # Convert to a flat list of Dtypes
-        dtype_list = []
-        for f_item in fmt:
-            if isinstance(f_item, numbers.Integral):
-                dtype_list.append(Dtype('bits', f_item))
-            elif isinstance(f_item, Dtype):
-                dtype_list.append(f_item)
-            else:
-                token_list = utils.preprocess_tokens(f_item)
-                for t in token_list:
-                    try:
-                        name, length = utils.parse_name_length_token(t, **kwargs)
-                    except ValueError:
-                        dtype_list.append(Dtype('bits', int(t)))
-                    else:
-                        dtype_list.append(Dtype(name, length))
-        return self._read_dtype_list(dtype_list, pos)
+        pass
 
     def _read_dtype_list(self, dtypes: List[Dtype], pos: int) -> Tuple[List[Union[int, float, str, Bits, bool, bytes, None]], int]:
-        has_stretchy_token = False
-        bits_after_stretchy_token = 0
-        for dtype in dtypes:
-            stretchy = dtype.bitlength is None and not dtype.variable_length
-            if stretchy:
-                if has_stretchy_token:
-                    raise bitstring.Error("It's not possible to have more than one 'filler' token.")
-                has_stretchy_token = True
-            elif has_stretchy_token:
-                if dtype.variable_length:
-                    raise bitstring.Error(f"It's not possible to parse a variable length token '{dtype}' after a 'filler' token.")
-                bits_after_stretchy_token += dtype.bitlength
-
-        # We should have precisely zero or one stretchy token
-        vals = []
-        for dtype in dtypes:
-            stretchy = dtype.bitlength is None and not dtype.variable_length
-            if stretchy:
-                bits_remaining = len(self) - pos
-                # Set length to the remaining bits
-                bitlength = max(bits_remaining - bits_after_stretchy_token, 0)
-                items, remainder = divmod(bitlength, dtype.bits_per_item)
-                if remainder != 0:
-                    raise ValueError(
-                        f"The '{dtype.name}' type must have a bit length that is a multiple of {dtype.bits_per_item}"
-                        f" so cannot be created from the {bitlength} bits that are available for this stretchy token.")
-                dtype = Dtype(dtype.name, items)
-            if dtype.bitlength is not None:
-                val = dtype.read_fn(self, pos)
-                pos += dtype.bitlength
-            else:
-                val, pos = dtype.read_fn(self, pos)
-            if val is not None:  # Don't append pad tokens
-                vals.append(val)
-        return vals, pos
+        pass
 
     def find(self, bs: BitsType, /, start: Optional[int] = None, end: Optional[int] = None,
              bytealigned: Optional[bool] = None) -> Union[Tuple[int], Tuple[()]]:
@@ -1200,32 +845,15 @@ class Bits:
         (6,)
 
         """
-        bs = Bits._create_from_bitstype(bs)
-        if len(bs) == 0:
-            raise ValueError("Cannot find an empty bitstring.")
-        start, end = self._validate_slice(start, end)
-        ba = bitstring.options.bytealigned if bytealigned is None else bytealigned
-        p = self._find(bs, start, end, ba)
-        return p
+        pass
 
     def _find_lsb0(self, bs: Bits, start: int, end: int, bytealigned: bool) -> Union[Tuple[int], Tuple[()]]:
         # A forward find in lsb0 is very like a reverse find in msb0.
-        assert start <= end
-        assert bitstring.options.lsb0
-
-        new_slice = bitstring.helpers.offset_slice_indices_lsb0(slice(start, end, None), len(self))
-        msb0_start, msb0_end = self._validate_slice(new_slice.start, new_slice.stop)
-        p = self._rfind_msb0(bs, msb0_start, msb0_end, bytealigned)
-
-        if p:
-            return (len(self) - p[0] - len(bs),)
-        else:
-            return ()
+        pass
 
     def _find_msb0(self, bs: Bits, start: int, end: int, bytealigned: bool) -> Union[Tuple[int], Tuple[()]]:
         """Find first occurrence of a binary string."""
-        p = self._bitstore.find(bs._bitstore, start, end, bytealigned)
-        return () if p is None else (p,)
+        pass
 
     def findall(self, bs: BitsType, start: Optional[int] = None, end: Optional[int] = None, count: Optional[int] = None,
                 bytealigned: Optional[bool] = None) -> Iterable[int]:
@@ -1245,54 +873,15 @@ class Bits:
         Note that all occurrences of bs are found, even if they overlap.
 
         """
-        if count is not None and count < 0:
-            raise ValueError("In findall, count must be >= 0.")
-        bs = Bits._create_from_bitstype(bs)
-        start, end = self._validate_slice(start, end)
-        ba = bitstring.options.bytealigned if bytealigned is None else bytealigned
-        return self._findall(bs, start, end, count, ba)
+        pass
 
     def _findall_msb0(self, bs: Bits, start: int, end: int, count: Optional[int],
                       bytealigned: bool) -> Iterable[int]:
-        c = 0
-        for i in self._bitstore.findall_msb0(bs._bitstore, start, end, bytealigned):
-            if count is not None and c >= count:
-                return
-            c += 1
-            yield i
-        return
+        pass
 
     def _findall_lsb0(self, bs: Bits, start: int, end: int, count: Optional[int],
                       bytealigned: bool) -> Iterable[int]:
-        assert start <= end
-        assert bitstring.options.lsb0
-
-        new_slice = bitstring.helpers.offset_slice_indices_lsb0(slice(start, end, None), len(self))
-        msb0_start, msb0_end = self._validate_slice(new_slice.start, new_slice.stop)
-
-        # Search chunks starting near the end and then moving back.
-        c = 0
-        increment = max(8192, len(bs) * 80)
-        buffersize = min(increment + len(bs), msb0_end - msb0_start)
-        pos = max(msb0_start, msb0_end - buffersize)
-        while True:
-            found = list(self._findall_msb0(bs, start=pos, end=pos + buffersize, count=None, bytealigned=False))
-            if not found:
-                if pos == msb0_start:
-                    return
-                pos = max(msb0_start, pos - increment)
-                continue
-            while found:
-                if count is not None and c >= count:
-                    return
-                c += 1
-                lsb0_pos = len(self) - found.pop() - len(bs)
-                if not bytealigned or lsb0_pos % 8 == 0:
-                    yield lsb0_pos
-
-            pos = max(msb0_start, pos - increment)
-            if pos == msb0_start:
-                return
+        pass
 
     def rfind(self, bs: BitsType, /, start: Optional[int] = None, end: Optional[int] = None,
               bytealigned: Optional[bool] = None) -> Union[Tuple[int], Tuple[()]]:
@@ -1313,31 +902,15 @@ class Bits:
         if end < start.
 
         """
-        bs = Bits._create_from_bitstype(bs)
-        start, end = self._validate_slice(start, end)
-        ba = bitstring.options.bytealigned if bytealigned is None else bytealigned
-        if len(bs) == 0:
-            raise ValueError("Cannot find an empty bitstring.")
-        p = self._rfind(bs, start, end, ba)
-        return p
+        pass
 
     def _rfind_msb0(self, bs: Bits, start: int, end: int, bytealigned: bool) -> Union[Tuple[int], Tuple[()]]:
         """Find final occurrence of a binary string."""
-        p = self._bitstore.rfind(bs._bitstore, start, end, bytealigned)
-        return () if p is None else (p,)
+        pass
 
     def _rfind_lsb0(self, bs: Bits, start: int, end: int, bytealigned: bool) -> Union[Tuple[int], Tuple[()]]:
         # A reverse find in lsb0 is very like a forward find in msb0.
-        assert start <= end
-        assert bitstring.options.lsb0
-        new_slice = bitstring.helpers.offset_slice_indices_lsb0(slice(start, end, None), len(self))
-        msb0_start, msb0_end = self._validate_slice(new_slice.start, new_slice.stop)
-
-        p = self._find_msb0(bs, msb0_start, msb0_end, bytealigned)
-        if p:
-            return (len(self) - p[0] - len(bs),)
-        else:
-            return ()
+        pass
 
     def cut(self, bits: int, start: Optional[int] = None, end: Optional[int] = None,
             count: Optional[int] = None) -> Iterator[Bits]:
@@ -1351,22 +924,7 @@ class Bits:
                  Default is to cut as many times as possible.
 
         """
-        start_, end_ = self._validate_slice(start, end)
-        if count is not None and count < 0:
-            raise ValueError("Cannot cut - count must be >= 0.")
-        if bits <= 0:
-            raise ValueError("Cannot cut - bits must be >= 0.")
-        c = 0
-        while count is None or c < count:
-            c += 1
-            nextchunk = self._slice(start_, min(start_ + bits, end_))
-            if len(nextchunk) == 0:
-                return
-            yield nextchunk
-            if len(nextchunk) != bits:
-                return
-            start_ += bits
-        return
+        pass
 
     def split(self, delimiter: BitsType, start: Optional[int] = None, end: Optional[int] = None,
               count: Optional[int] = None, bytealigned: Optional[bool] = None) -> Iterable[Bits]:
@@ -1386,37 +944,7 @@ class Bits:
         Raises ValueError if the delimiter is empty.
 
         """
-        delimiter = Bits._create_from_bitstype(delimiter)
-        if len(delimiter) == 0:
-            raise ValueError("split delimiter cannot be empty.")
-        start, end = self._validate_slice(start, end)
-        bytealigned_: bool = bitstring.options.bytealigned if bytealigned is None else bytealigned
-        if count is not None and count < 0:
-            raise ValueError("Cannot split - count must be >= 0.")
-        if count == 0:
-            return
-        f = functools.partial(self._find_msb0, bs=delimiter, bytealigned=bytealigned_)
-        found = f(start=start, end=end)
-        if not found:
-            # Initial bits are the whole bitstring being searched
-            yield self._slice(start, end)
-            return
-        # yield the bytes before the first occurrence of the delimiter, even if empty
-        yield self._slice(start, found[0])
-        startpos = pos = found[0]
-        c = 1
-        while count is None or c < count:
-            pos += len(delimiter)
-            found = f(start=pos, end=end)
-            if not found:
-                # No more occurrences, so return the rest of the bitstring
-                yield self._slice(startpos, end)
-                return
-            c += 1
-            yield self._slice(startpos, found[0])
-            startpos = pos = found[0]
-        # Have generated count bitstrings, so time to quit.
-        return
+        pass
 
     def join(self: TBits, sequence: Iterable[Any]) -> TBits:
         """Return concatenation of bitstrings joined by self.
@@ -1424,24 +952,7 @@ class Bits:
         sequence -- A sequence of bitstrings.
 
         """
-        bs = MutableBitStore()
-        if len(self) == 0:
-            # Optimised version that doesn't need to add self between every item
-            for item in sequence:
-                bs += Bits._create_from_bitstype(item)._bitstore
-        else:
-            sequence_iter = iter(sequence)
-            try:
-                bs += Bits._create_from_bitstype(next(sequence_iter))._bitstore
-            except StopIteration:
-                pass
-            else:
-                for item in sequence_iter:
-                    bs += self._bitstore
-                    bs += Bits._create_from_bitstype(item)._bitstore
-        s = self.__class__()
-        s._bitstore = bs
-        return s
+        pass
 
     def tobytes(self) -> bytes:
         """Return the bitstring as bytes, padding with zero bits if needed.
@@ -1449,11 +960,11 @@ class Bits:
         Up to seven zero bits will be added at the end to byte align.
 
         """
-        return self._bitstore.to_bytes()
+        pass
 
     def tobitarray(self) -> bitarray.bitarray:
         """Convert the bitstring to a bitarray object."""
-        return self._bitstore.tobitarray()
+        pass
 
     def tofile(self, f: BinaryIO) -> None:
         """Write the bitstring to a file object, padding with zero bits if needed.
@@ -1461,10 +972,7 @@ class Bits:
         Up to seven zero bits will be added at the end to byte align.
 
         """
-        # If the bitstring is file based then we don't want to read it all in to memory first.
-        chunk_size = 8 * 100 * 1024 * 1024  # 100 MiB
-        for chunk in self.cut(chunk_size):
-            f.write(chunk.tobytes())
+        pass
 
     def startswith(self, prefix: BitsType, start: Optional[int] = None, end: Optional[int] = None) -> bool:
         """Return whether the current bitstring starts with prefix.
@@ -1474,9 +982,7 @@ class Bits:
         end -- The bit position to end at. Defaults to len(self).
 
         """
-        prefix = self._create_from_bitstype(prefix)
-        start, end = self._validate_slice(start, end)
-        return self._slice(start, start + len(prefix)) == prefix if end >= start + len(prefix) else False
+        pass
 
     def endswith(self, suffix: BitsType, start: Optional[int] = None, end: Optional[int] = None) -> bool:
         """Return whether the current bitstring ends with suffix.
@@ -1486,9 +992,7 @@ class Bits:
         end -- The bit position to end at. Defaults to len(self).
 
         """
-        suffix = self._create_from_bitstype(suffix)
-        start, end = self._validate_slice(start, end)
-        return self._slice(end - len(suffix), end) == suffix if start + len(suffix) <= end else False
+        pass
 
     def all(self, value: Any, pos: Optional[Iterable[int]] = None) -> bool:
         """Return True if one or many bits are all set to bool(value).
@@ -1499,13 +1003,7 @@ class Bits:
                the same way as slice indices. Defaults to the whole bitstring.
 
         """
-        value = 1 if bool(value) else 0
-        if pos is None:
-            return self._bitstore.all() if value else not self._bitstore.any()
-        for p in pos:
-            if self._bitstore.getindex(p) != value:
-                return False
-        return True
+        pass
 
     def any(self, value: Any, pos: Optional[Iterable[int]] = None) -> bool:
         """Return True if any of one or many bits are set to bool(value).
@@ -1516,13 +1014,7 @@ class Bits:
                the same way as slice indices. Defaults to the whole bitstring.
 
         """
-        value = 1 if bool(value) else 0
-        if pos is None:
-            return self._bitstore.any() if value else not self._bitstore.all()
-        for p in pos:
-            if self._bitstore.getindex(p) == value:
-                return True
-        return False
+        pass
 
     def count(self, value: Any) -> int:
         """Return count of total number of either zero or one bits.
@@ -1534,154 +1026,31 @@ class Bits:
         7
 
         """
-        # count the number of 1s (from which it's easy to work out the 0s).
-        count = self._bitstore.count(1)
-        return count if value else len(self) - count
+        pass
 
     @staticmethod
     def _format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype,
                      colour_start: str, colour_end: str, width: Optional[int]=None) -> Tuple[str, int]:
-        get_fn = dtype.get_fn
-        if dtype.name == 'bytes':  # Special case for bytes to print one character each.
-            get_fn = Bits._getbytes_printable
-        if dtype.name == 'bool':  # Special case for bool to print '1' or '0' instead of `True` or `False`.
-            get_fn = dtype_register.get_dtype('uint', bits_per_group).get_fn
-        if bits_per_group == 0:
-            x = str(get_fn(bits))
-        else:
-            # Left-align for fixed width types when msb0, otherwise right-align.
-            align = '<' if dtype.name in ['bin', 'oct', 'hex', 'bits', 'bytes'] and not bitstring.options.lsb0 else '>'
-            chars_per_group = 0
-            if dtype_register[dtype.name].bitlength2chars_fn is not None:
-                chars_per_group = dtype_register[dtype.name].bitlength2chars_fn(bits_per_group)
-            x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.cut(bits_per_group))
-
-        chars_used = len(x)
-        padding_spaces = 0 if width is None else max(width - len(x), 0)
-        x = colour_start + x + colour_end
-        # Pad final line with spaces to align it
-        if bitstring.options.lsb0:
-            x = ' ' * padding_spaces + x
-        else:
-            x += ' ' * padding_spaces
-        return x, chars_used
+        pass
 
     @staticmethod
     def _chars_per_group(bits_per_group: int, fmt: Optional[str]):
         """How many characters are needed to represent a number of bits with a given format."""
-        if fmt is None or dtype_register[fmt].bitlength2chars_fn is None:
-            return 0
-        return dtype_register[fmt].bitlength2chars_fn(bits_per_group)
+        pass
 
     @staticmethod
     def _bits_per_char(fmt: str):
         """How many bits are represented by each character of a given format."""
-        if fmt not in ['bin', 'oct', 'hex', 'bytes']:
-            raise ValueError
-        return 24 // dtype_register[fmt].bitlength2chars_fn(24)
+        pass
 
     def _pp(self, dtype1: Dtype, dtype2: Optional[Dtype], bits_per_group: int, width: int, sep: str, format_sep: str,
             show_offset: bool, stream: TextIO, lsb0: bool, offset_factor: int) -> None:
         """Internal pretty print method."""
-        colour = Colour(not bitstring.options.no_color)
-        name1 = dtype1.name
-        name2 = dtype2.name if dtype2 is not None else None
-        if dtype1.variable_length:
-            raise ValueError(f"Can't use Dtype '{dtype1}' in pp() as it has a variable length.")
-        if dtype2 is not None and dtype2.variable_length:
-            raise ValueError(f"Can't use Dtype '{dtype2}' in pp() as it has a variable length.")
-        offset_width = 0
-        offset_sep = ' :' if lsb0 else ': '
-        if show_offset:
-            # This could be 1 too large in some circumstances. Slightly recurrent logic needed to fix it...
-            offset_width = len(str(len(self))) + len(offset_sep)
-        if bits_per_group > 0:
-            group_chars1 = Bits._chars_per_group(bits_per_group, name1)
-            group_chars2 = Bits._chars_per_group(bits_per_group, name2)
-            # The number of characters that get added when we add an extra group (after the first one)
-            total_group_chars = group_chars1 + group_chars2 + len(sep) + len(sep) * bool(group_chars2)
-            width_excluding_offset_and_final_group = width - offset_width - group_chars1 - group_chars2 - len(
-                format_sep) * bool(group_chars2)
-            width_excluding_offset_and_final_group = max(width_excluding_offset_and_final_group, 0)
-            groups_per_line = 1 + width_excluding_offset_and_final_group // total_group_chars
-            max_bits_per_line = groups_per_line * bits_per_group  # Number of bits represented on each line
-        else:
-            assert bits_per_group == 0  # Don't divide into groups
-            width_available = width - offset_width - len(format_sep) * (name2 is not None)
-            width_available = max(width_available, 1)
-            if name2 is None:
-                max_bits_per_line = width_available * Bits._bits_per_char(name1)
-            else:
-                chars_per_24_bits = dtype_register[name1].bitlength2chars_fn(24) + dtype_register[name2].bitlength2chars_fn(24)
-                max_bits_per_line = 24 * (width_available // chars_per_24_bits)
-                if max_bits_per_line == 0:
-                    max_bits_per_line = 24  # We can't fit into the width asked for. Show something small.
-        assert max_bits_per_line > 0
-
-        bitpos = 0
-        first_fb_width = second_fb_width = None
-        for bits in self.cut(max_bits_per_line):
-            offset_str = ''
-            if show_offset:
-                offset = bitpos // offset_factor
-                bitpos += len(bits)
-                if bitstring.options.lsb0:
-                    offset_str = colour.green + offset_sep + f'{offset: <{offset_width - len(offset_sep)}}' + colour.off
-                else:
-                    offset_str = colour.green + f'{offset: >{offset_width - len(offset_sep)}}' + offset_sep + colour.off
-
-            fb1, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype1, colour.purple, colour.off, first_fb_width)
-            if first_fb_width is None:
-                first_fb_width = chars_used
-
-            fb2 = ''
-            if dtype2 is not None:
-                fb2, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype2, colour.blue, colour.off, second_fb_width)
-                if second_fb_width is None:
-                    second_fb_width = chars_used
-                fb2 = format_sep + fb2
-
-            if bitstring.options.lsb0 is True:
-                line_fmt = fb1 + fb2 + offset_str + '\n'
-            else:
-                line_fmt = offset_str + fb1 + fb2 + '\n'
-            stream.write(line_fmt)
-        return
+        pass
 
     @staticmethod
     def _process_pp_tokens(token_list, fmt):
-        if len(token_list) not in [1, 2]:
-            raise ValueError(
-                f"Only one or two tokens can be used in an pp() format - '{fmt}' has {len(token_list)} tokens.")
-        has_length_in_fmt = True
-        name1, length1 = utils.parse_name_length_token(token_list[0])
-        dtype1 = Dtype(name1, length1)
-        bits_per_group = dtype1.bitlength
-        dtype2 = None
-
-        if len(token_list) == 2:
-            name2, length2 = utils.parse_name_length_token(token_list[1])
-            dtype2 = Dtype(name2, length2)
-            if None not in {dtype1.bitlength, dtype2.bitlength} and dtype1.bitlength != dtype2.bitlength:
-                raise ValueError(
-                    f"Differing bit lengths of {dtype1.bitlength} and {dtype2.bitlength} in format string '{fmt}'.")
-            if bits_per_group is None:
-                bits_per_group = dtype2.bitlength
-
-        if bits_per_group is None:
-            has_length_in_fmt = False
-            if len(token_list) == 1:
-                bits_per_group = {'bin': 8, 'hex': 8, 'oct': 12, 'bytes': 32}.get(dtype1.name)
-                if bits_per_group is None:
-                    raise ValueError(f"No length or default length available for pp() format '{fmt}'.")
-            else:
-                try:
-                    bits_per_group = 2 * Bits._bits_per_char(dtype1.name) * Bits._bits_per_char(dtype2.name)
-                except ValueError:
-                    raise ValueError(f"Can't find a default bitlength to use for pp() format '{fmt}'.")
-                if bits_per_group >= 24:
-                    bits_per_group //= 2
-        return dtype1, dtype2, bits_per_group, has_length_in_fmt
+        pass
 
     def pp(self, fmt: Optional[str] = None, width: int = 120, sep: str = ' ',
            show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
@@ -1701,41 +1070,16 @@ class Bits:
         >>> s.pp('b, h', sep='_', show_offset=False)
 
         """
-        colour = Colour(not bitstring.options.no_color)
-        if fmt is None:
-            fmt = 'bin, hex' if len(self) % 8 == 0 and len(self) >= 8 else 'bin'
-        token_list = utils.preprocess_tokens(fmt)
-        dtype1, dtype2, bits_per_group, has_length_in_fmt = Bits._process_pp_tokens(token_list, fmt)
-        trailing_bit_length = len(self) % bits_per_group if has_length_in_fmt and bits_per_group else 0
-        data = self if trailing_bit_length == 0 else self[0: -trailing_bit_length]
-        format_sep = " : "  # String to insert on each line between multiple formats
-        tidy_fmt = colour.purple + str(dtype1) + colour.off
-        if dtype2 is not None:
-            tidy_fmt += ', ' + colour.blue + str(dtype2) + colour.off
-        output_stream = io.StringIO()
-        len_str = colour.green + str(len(self)) + colour.off
-        output_stream.write(f"<{self.__class__.__name__}, fmt='{tidy_fmt}', length={len_str} bits> [\n")
-        data._pp(dtype1, dtype2, bits_per_group, width, sep, format_sep, show_offset,
-                 output_stream, bitstring.options.lsb0, 1)
-        output_stream.write("]")
-        if trailing_bit_length != 0:
-            output_stream.write(" + trailing_bits = " + str(self[-trailing_bit_length:]))
-        output_stream.write("\n")
-        stream.write(output_stream.getvalue())
-        return
+        pass
 
     def copy(self: TBits) -> TBits:
         """Return a copy of the bitstring."""
-        # Note that if you want a new copy (different ID), use _copy instead.
-        # The copy can return self as it's immutable.
-        return self
+        pass
 
     @classmethod
     def fromstring(cls: TBits, s: str, /) -> TBits:
         """Create a new bitstring from a formatted string."""
-        x = super().__new__(cls)
-        x._bitstore = common_helpers.str_to_bitstore(s)
-        return x
+        pass
 
     len = length = property(_getlength, doc="The length of the bitstring in bits. Read only.")
 
